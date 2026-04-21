@@ -79,13 +79,19 @@ function ProjectDetail() {
 
   const updateTask = async (id: string, patch: Partial<Task>) => {
     const { error } = await supabase.from("tasks").update(patch).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
   };
 
   const deleteTask = async (id: string) => {
     const { error } = await supabase.from("tasks").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     setTasks((prev) => prev.filter((t) => t.id !== id && t.parent_task_id !== id));
     toast.success("Task deleted");
   };
@@ -106,7 +112,10 @@ function ProjectDetail() {
       .insert({ ...input, project_id: projectId, reporter_id: user.id })
       .select()
       .single();
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     if (data) setTasks((prev) => [...prev, data]);
     toast.success("Task created");
   };
