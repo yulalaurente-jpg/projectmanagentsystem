@@ -5,11 +5,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, ChevronLeft, Search } from "lucide-react";
+import { Plus, ChevronLeft, Search, List, KanbanSquare, GanttChart as GanttIcon } from "lucide-react";
 import { toast } from "sonner";
 import { TaskRow } from "@/components/TaskRow";
 import { TaskDialog } from "@/components/TaskDialog";
 import { CreateTaskDialog } from "@/components/CreateTaskDialog";
+import { KanbanBoard } from "@/components/views/KanbanBoard";
+import { GanttChart } from "@/components/views/GanttChart";
 import type { Tables, Enums } from "@/integrations/supabase/types";
 
 export const Route = createFileRoute("/projects/$projectId")({
@@ -50,6 +52,7 @@ function ProjectDetail() {
   const [createOpen, setCreateOpen] = useState(false);
   const [createParent, setCreateParent] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [view, setView] = useState<"list" | "kanban" | "gantt">("list");
 
   const load = async () => {
     setLoading(true);
@@ -103,6 +106,7 @@ function ProjectDetail() {
     priority: Enums<"task_priority">;
     assignee_id: string | null;
     due_date: string | null;
+    start_date: string | null;
     labels: string[];
     parent_task_id: string | null;
   }) => {
