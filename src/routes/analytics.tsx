@@ -98,16 +98,17 @@ function AnalyticsPage() {
   }, [tasks]);
 
   const workloadData = useMemo(() => {
-    const map: Record<string, { name: string; todo: number; in_progress: number; in_review: number; done: number }> = {};
+    type Row = { name: string; todo: number; in_progress: number; in_review: number; done: number };
+    const map: Record<string, Row> = {};
     profiles.forEach((p) => {
       map[p.id] = { name: p.display_name || p.email || "Unknown", todo: 0, in_progress: 0, in_review: 0, done: 0 };
     });
     map["unassigned"] = { name: "Unassigned", todo: 0, in_progress: 0, in_review: 0, done: 0 };
     tasks.forEach((t) => {
       const key = t.assignee_id ?? "unassigned";
-      if (!map[key]) return;
-      (map[key] as Record<string, number | string>)[t.status] =
-        ((map[key] as Record<string, number>)[t.status] ?? 0) + 1;
+      const row = map[key];
+      if (!row) return;
+      row[t.status as keyof Omit<Row, "name">] += 1;
     });
     return Object.values(map).filter((m) => m.todo + m.in_progress + m.in_review + m.done > 0);
   }, [tasks, profiles]);

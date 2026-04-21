@@ -25,6 +25,7 @@ export function CreateTaskDialog({
     priority: Enums<"task_priority">;
     assignee_id: string | null;
     due_date: string | null;
+    start_date: string | null;
     labels: string[];
     parent_task_id: string | null;
   }) => Promise<void>;
@@ -35,12 +36,13 @@ export function CreateTaskDialog({
   const [priority, setPriority] = useState<Enums<"task_priority">>("medium");
   const [assignee, setAssignee] = useState<string>("none");
   const [dueDate, setDueDate] = useState("");
+  const [startDate, setStartDate] = useState("");
   const [labelsStr, setLabelsStr] = useState("");
 
   useEffect(() => {
     if (open) {
       setTitle(""); setDescription(""); setStatus("todo"); setPriority("medium");
-      setAssignee("none"); setDueDate(""); setLabelsStr("");
+      setAssignee("none"); setDueDate(""); setStartDate(""); setLabelsStr("");
     }
   }, [open]);
 
@@ -53,6 +55,7 @@ export function CreateTaskDialog({
       priority,
       assignee_id: assignee === "none" ? null : assignee,
       due_date: dueDate ? new Date(dueDate).toISOString() : null,
+      start_date: startDate ? new Date(startDate).toISOString() : null,
       labels: labelsStr.split(",").map((s) => s.trim()).filter(Boolean),
       parent_task_id: parentTaskId,
     });
@@ -113,9 +116,15 @@ export function CreateTaskDialog({
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5">
-              <Label>Due date</Label>
-              <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1.5">
+                <Label>Start</Label>
+                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Due</Label>
+                <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+              </div>
             </div>
           </div>
           <div className="space-y-1.5">
