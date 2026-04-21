@@ -83,7 +83,7 @@ function TemplatesPage() {
     load();
   };
 
-  const addItem = async (templateId: string, label: string) => {
+  const addItem = async (templateId: string, label: string): Promise<void> => {
     if (!label.trim()) return;
     const max = items.filter((i) => i.template_id === templateId).length;
     const { data, error } = await supabase
@@ -91,19 +91,19 @@ function TemplatesPage() {
       .insert({ template_id: templateId, label: label.trim(), position: max })
       .select()
       .single();
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     if (data) setItems((i) => [...i, data]);
   };
 
-  const updateItem = async (id: string, label: string) => {
+  const updateItem = async (id: string, label: string): Promise<void> => {
     const { error } = await supabase.from("checklist_template_items").update({ label }).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setItems((i) => i.map((x) => (x.id === id ? { ...x, label } : x)));
   };
 
-  const removeItem = async (id: string) => {
+  const removeItem = async (id: string): Promise<void> => {
     const { error } = await supabase.from("checklist_template_items").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setItems((i) => i.filter((x) => x.id !== id));
   };
 
