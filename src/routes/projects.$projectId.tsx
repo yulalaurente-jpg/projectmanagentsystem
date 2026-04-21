@@ -5,11 +5,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, ChevronLeft, Search } from "lucide-react";
+import { Plus, ChevronLeft, Search, List, KanbanSquare, GanttChart as GanttIcon } from "lucide-react";
 import { toast } from "sonner";
 import { TaskRow } from "@/components/TaskRow";
 import { TaskDialog } from "@/components/TaskDialog";
 import { CreateTaskDialog } from "@/components/CreateTaskDialog";
+import { KanbanBoard } from "@/components/views/KanbanBoard";
+import { GanttChart } from "@/components/views/GanttChart";
 import type { Tables, Enums } from "@/integrations/supabase/types";
 
 export const Route = createFileRoute("/projects/$projectId")({
@@ -50,6 +52,7 @@ function ProjectDetail() {
   const [createOpen, setCreateOpen] = useState(false);
   const [createParent, setCreateParent] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [view, setView] = useState<"list" | "kanban" | "gantt">("list");
 
   const load = async () => {
     setLoading(true);
@@ -103,6 +106,7 @@ function ProjectDetail() {
     priority: Enums<"task_priority">;
     assignee_id: string | null;
     due_date: string | null;
+    start_date: string | null;
     labels: string[];
     parent_task_id: string | null;
   }) => {
@@ -142,6 +146,23 @@ function ProjectDetail() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <div className="flex items-center bg-muted/60 rounded-md p-0.5">
+              {([
+                { v: "list", label: "List", Icon: List },
+                { v: "kanban", label: "Board", Icon: KanbanSquare },
+                { v: "gantt", label: "Gantt", Icon: GanttIcon },
+              ] as const).map(({ v, label, Icon }) => (
+                <button
+                  key={v}
+                  onClick={() => setView(v)}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+                    view === v ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" /> {label}
+                </button>
+              ))}
+            </div>
             <div className="relative">
               <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search tasks…" className="h-8 w-48 pl-8 text-sm" />
@@ -154,37 +175,53 @@ function ProjectDetail() {
       </header>
 
       <div className="flex-1 overflow-auto">
-        <div className="border-b border-border bg-muted/30 px-6 py-2 grid grid-cols-[24px_60px_1fr_120px_100px_120px_120px_60px] gap-3 text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
-          <div></div>
-          <div>Key</div>
-          <div>Title</div>
-          <div>Status</div>
-          <div>Priority</div>
-          <div>Assignee</div>
-          <div>Due</div>
-          <div></div>
-        </div>
-        {parentTasks.length === 0 ? (
-          <div className="p-12 text-center text-sm text-muted-foreground">
-            No tasks yet. Click "New task" to add one.
-          </div>
-        ) : (
-          <div>
-            {parentTasks.map((t, idx) => (
-              <TaskRow
-                key={t.id}
-                task={t}
-                projectKey={project.key}
-                index={idx + 1}
-                subtasks={subtasksOf(t.id)}
-                profiles={profiles}
-                onOpen={(id) => setOpenTaskId(id)}
-                onUpdate={updateTask}
-                onDelete={deleteTask}
-                onAddSubtask={(parentId) => { setCreateParent(parentId); setCreateOpen(true); }}
-              />
-            ))}
-          </div>
+        {view === "list" && (
+          <>
+            <div className="border-b border-border bg-muted/30 px-6 py-2 grid grid-cols-[24px_60px_1fr_120px_100px_120px_120px_60px] gap-3 text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+              <div></div>
+              <div>Key</div>
+              <div>Title</div>
+              <div>Status</div>
+              <div>Priority</div>
+              <div>Assignee</div>
+              <div>Due</div>
+              <div></div>
+            </div>
+            {parentTasks.length === 0 ? (
+              <div className="p-12 text-center text-sm text-muted-foreground">
+                No tasks yet. Click "New task" to add one.
+              </div>
+            ) : (
+              <div>
+                {parentTasks.map((t, idx) => (
+                  <TaskRow
+                    key={t.id}
+                    task={t}
+                    projectKey={project.key}
+                    index={idx + 1}
+                    subtasks={subtasksOf(t.id)}
+                    profiles={profiles}
+                    onOpen={(id) => setOpenTaskId(id)}
+                    onUpdate={updateTask}
+                    onDelete={deleteTask}
+                    onAddSubtask={(parentId) => { setCreateParent(parentId); setCreateOpen(true); }}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+        {view === "kanban" && (
+          <KanbanBoard
+            tasks={tasks}
+            profiles={profiles}
+            projectKey={project.key}
+            onOpen={(id) => setOpenTaskId(id)}
+            onUpdate={updateTask}
+          />
+        )}
+        {view === "gantt" && (
+          <GanttChart tasks={tasks} profiles={profiles} onOpen={(id) => setOpenTaskId(id)} />
         )}
       </div>
 

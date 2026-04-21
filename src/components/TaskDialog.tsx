@@ -227,6 +227,14 @@ export function TaskDialog({
                 onChange={(e) => onUpdate(task.id, { due_date: e.target.value ? new Date(e.target.value).toISOString() : null })}
               />
             </Field>
+            <Field label="Start date">
+              <Input
+                type="date"
+                className="h-8"
+                value={task.start_date ? task.start_date.slice(0, 10) : ""}
+                onChange={(e) => onUpdate(task.id, { start_date: e.target.value ? new Date(e.target.value).toISOString() : null })}
+              />
+            </Field>
             <Field label="Labels">
               <Input
                 className="h-8"
