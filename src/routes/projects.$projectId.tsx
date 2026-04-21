@@ -12,6 +12,7 @@ import { TaskDialog } from "@/components/TaskDialog";
 import { CreateTaskDialog } from "@/components/CreateTaskDialog";
 import { KanbanBoard } from "@/components/views/KanbanBoard";
 import { GanttChart } from "@/components/views/GanttChart";
+import { ChecklistPanel } from "@/components/ChecklistPanel";
 import type { Tables, Enums } from "@/integrations/supabase/types";
 
 export const Route = createFileRoute("/projects/$projectId")({
