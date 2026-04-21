@@ -35,11 +35,19 @@ const NAME_MAP: Record<string, string> = {
   "alert-triangle": "AlertTriangle",
 };
 
-export function DynamicIcon({ name, className }: { name: string | null | undefined; className?: string }) {
+export function DynamicIcon({
+  name,
+  className,
+  style,
+}: {
+  name: string | null | undefined;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   const compName = NAME_MAP[name ?? "folder"] ?? "Folder";
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const Icon = (Lucide as any)[compName] ?? Lucide.Folder;
-  return <Icon className={className} />;
+  return <Icon className={className} style={style} />;
 }
 
 export function IconPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {

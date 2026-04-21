@@ -62,7 +62,7 @@ export function ChecklistPanel({
 
   useEffect(() => { load(); }, [scope, scopeId]);
 
-  const createChecklist = async (input: { title: string; color: string; icon: string }) => {
+  const createChecklist = async (input: { title: string; color: string; icon: string }): Promise<void> => {
     if (!user) return;
     const payload: Record<string, unknown> = {
       title: input.title,
@@ -73,26 +73,26 @@ export function ChecklistPanel({
     };
     payload[scope === "project" ? "project_id" : "task_id"] = scopeId;
     const { data, error } = await supabase.from("checklists").insert(payload as never).select().single();
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     if (data) setChecklists((c) => [...c, data]);
     toast.success("Checklist added");
   };
 
-  const updateChecklist = async (id: string, patch: Partial<Checklist>) => {
+  const updateChecklist = async (id: string, patch: Partial<Checklist>): Promise<void> => {
     const { error } = await supabase.from("checklists").update(patch).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setChecklists((c) => c.map((x) => (x.id === id ? { ...x, ...patch } : x)));
   };
 
-  const deleteChecklist = async (id: string) => {
+  const deleteChecklist = async (id: string): Promise<void> => {
     if (!confirm("Delete this checklist?")) return;
     const { error } = await supabase.from("checklists").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setChecklists((c) => c.filter((x) => x.id !== id));
     setItems((i) => i.filter((x) => x.checklist_id !== id));
   };
 
-  const addItem = async (checklistId: string, label: string) => {
+  const addItem = async (checklistId: string, label: string): Promise<void> => {
     if (!label.trim()) return;
     const max = items.filter((i) => i.checklist_id === checklistId).length;
     const { data, error } = await supabase
@@ -100,19 +100,19 @@ export function ChecklistPanel({
       .insert({ checklist_id: checklistId, label: label.trim(), position: max })
       .select()
       .single();
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     if (data) setItems((i) => [...i, data]);
   };
 
-  const updateItem = async (id: string, patch: Partial<Item>) => {
+  const updateItem = async (id: string, patch: Partial<Item>): Promise<void> => {
     const { error } = await supabase.from("checklist_items").update(patch).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setItems((i) => i.map((x) => (x.id === id ? { ...x, ...patch } : x)));
   };
 
-  const deleteItem = async (id: string) => {
+  const deleteItem = async (id: string): Promise<void> => {
     const { error } = await supabase.from("checklist_items").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setItems((i) => i.filter((x) => x.id !== id));
   };
 
@@ -134,7 +134,7 @@ export function ChecklistPanel({
     );
   };
 
-  const applyTemplate = async (template: Template) => {
+  const applyTemplate = async (template: Template): Promise<void> => {
     if (!user) return;
     const payload: Record<string, unknown> = {
       title: template.name,
@@ -145,7 +145,7 @@ export function ChecklistPanel({
     };
     payload[scope === "project" ? "project_id" : "task_id"] = scopeId;
     const { data: cl, error } = await supabase.from("checklists").insert(payload as never).select().single();
-    if (error || !cl) return toast.error(error?.message ?? "Failed");
+    if (error || !cl) { toast.error(error?.message ?? "Failed"); return; }
     const tplItems = template.checklist_template_items ?? [];
     if (tplItems.length > 0) {
       const rows = tplItems
