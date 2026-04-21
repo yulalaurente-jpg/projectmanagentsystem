@@ -1,4 +1,6 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { AuthProvider } from "@/context/AuthContext";
+import { Toaster } from "@/components/ui/sonner";
 
 import appCss from "../styles.css?url";
 
@@ -29,11 +31,11 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Trackr — Project Management" },
+      { name: "description", content: "Manage projects, tasks, and subtasks across your team." },
+      { name: "author", content: "Trackr" },
+      { property: "og:title", content: "Trackr — Project Management" },
+      { property: "og:description", content: "Manage projects, tasks, and subtasks across your team." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
@@ -65,5 +67,10 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
-  return <Outlet />;
+  return (
+    <AuthProvider>
+      <Outlet />
+      <Toaster richColors position="top-right" />
+    </AuthProvider>
+  );
 }
