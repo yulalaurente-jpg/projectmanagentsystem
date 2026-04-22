@@ -23,7 +23,6 @@ import {
   Clock, CheckCircle2, Truck, PackageCheck, XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useAuth as _useAuth } from "@/context/AuthContext";
 import type { Enums } from "@/integrations/supabase/types";
 import { format } from "date-fns";
 
