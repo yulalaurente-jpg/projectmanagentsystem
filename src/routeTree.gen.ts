@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TemplatesRouteImport } from './routes/templates'
+import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -22,6 +23,11 @@ import { Route as ProjectsProjectIdRouteImport } from './routes/projects.$projec
 const TemplatesRoute = TemplatesRouteImport.update({
   id: '/templates',
   path: '/templates',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InventoryRoute = InventoryRouteImport.update({
+  id: '/inventory',
+  path: '/inventory',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -70,6 +76,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/analytics': typeof AnalyticsRoute
   '/auth': typeof AuthRoute
+  '/inventory': typeof InventoryRoute
   '/templates': typeof TemplatesRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/reports/$folderId': typeof ReportsFolderIdRoute
@@ -81,6 +88,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/analytics': typeof AnalyticsRoute
   '/auth': typeof AuthRoute
+  '/inventory': typeof InventoryRoute
   '/templates': typeof TemplatesRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/reports/$folderId': typeof ReportsFolderIdRoute
@@ -93,6 +101,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/analytics': typeof AnalyticsRoute
   '/auth': typeof AuthRoute
+  '/inventory': typeof InventoryRoute
   '/templates': typeof TemplatesRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
   '/reports/$folderId': typeof ReportsFolderIdRoute
@@ -106,6 +115,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/analytics'
     | '/auth'
+    | '/inventory'
     | '/templates'
     | '/projects/$projectId'
     | '/reports/$folderId'
@@ -117,6 +127,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/analytics'
     | '/auth'
+    | '/inventory'
     | '/templates'
     | '/projects/$projectId'
     | '/reports/$folderId'
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/analytics'
     | '/auth'
+    | '/inventory'
     | '/templates'
     | '/projects/$projectId'
     | '/reports/$folderId'
@@ -140,6 +152,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   AnalyticsRoute: typeof AnalyticsRoute
   AuthRoute: typeof AuthRoute
+  InventoryRoute: typeof InventoryRoute
   TemplatesRoute: typeof TemplatesRoute
   ProjectsProjectIdRoute: typeof ProjectsProjectIdRoute
   ReportsFolderIdRoute: typeof ReportsFolderIdRoute
@@ -154,6 +167,13 @@ declare module '@tanstack/react-router' {
       path: '/templates'
       fullPath: '/templates'
       preLoaderRoute: typeof TemplatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inventory': {
+      id: '/inventory'
+      path: '/inventory'
+      fullPath: '/inventory'
+      preLoaderRoute: typeof InventoryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -220,6 +240,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   AnalyticsRoute: AnalyticsRoute,
   AuthRoute: AuthRoute,
+  InventoryRoute: InventoryRoute,
   TemplatesRoute: TemplatesRoute,
   ProjectsProjectIdRoute: ProjectsProjectIdRoute,
   ReportsFolderIdRoute: ReportsFolderIdRoute,
