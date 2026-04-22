@@ -142,6 +142,10 @@ export function TaskDialog({
 
             <Separator />
 
+            <ChecklistPanel scope="task" scopeId={task.id} profiles={profiles} />
+
+            <Separator />
+
             <div>
               <Label className="text-xs uppercase tracking-wider text-muted-foreground">Comments ({comments.length})</Label>
               <div className="space-y-3 mt-2">
