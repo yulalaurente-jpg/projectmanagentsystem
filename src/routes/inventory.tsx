@@ -155,13 +155,28 @@ function InventoryPage() {
       </header>
 
       <div className="p-6 space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <StatCard label="Materials" value={materials.length} />
           <StatCard label="Low stock" value={lowStock} accent={lowStock > 0 ? "warn" : undefined} />
           <StatCard label="Total stock units" value={materials.reduce((s, m) => s + Number(m.stock_quantity), 0).toLocaleString()} />
+          <StatCard label="Pending requests" value={pendingRequests} accent={pendingRequests > 0 ? "warn" : undefined} />
         </div>
 
-        <Card>
+        <Tabs defaultValue="catalog" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="catalog">Catalog</TabsTrigger>
+            <TabsTrigger value="requests">
+              Requested Materials
+              {requests.length > 0 && (
+                <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+                  {requests.length}
+                </span>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="catalog">
+            <Card>
           {loading ? (
             <div className="p-8 text-sm text-muted-foreground text-center">Loading…</div>
           ) : materials.length === 0 ? (
@@ -211,7 +226,22 @@ function InventoryPage() {
               </TableBody>
             </Table>
           )}
-        </Card>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="requests">
+            <RequestsPanel
+              requests={requests}
+              materials={materials}
+              projects={projects}
+              profiles={profiles}
+              currentUserId={user?.id}
+              isAdmin={isAdmin}
+              onUpdate={updateRequestStatus}
+              onDelete={deleteRequest}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
 
       <MaterialDialog
