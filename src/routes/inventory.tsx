@@ -356,3 +356,137 @@ function MaterialDialog({
     </Dialog>
   );
 }
+
+function RequestsPanel({
+  requests, materials, projects, profiles, currentUserId, isAdmin, onUpdate, onDelete,
+}: {
+  requests: Request[];
+  materials: Material[];
+  projects: Project[];
+  profiles: Profile[];
+  currentUserId: string | undefined;
+  isAdmin: boolean;
+  onUpdate: (id: string, status: RequestStatus, reason?: string) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [filter, setFilter] = useState<RequestStatus | "all">("all");
+  const filtered = filter === "all" ? requests : requests.filter((r) => r.status === filter);
+
+  const matName = (id: string) => materials.find((m) => m.id === id)?.name ?? "Unknown";
+  const matUnit = (id: string) => materials.find((m) => m.id === id)?.unit ?? "";
+  const projName = (id: string) => {
+    const p = projects.find((x) => x.id === id);
+    return p ? `${p.key} · ${p.name}` : "Unknown";
+  };
+  const userName = (id: string | null) => {
+    if (!id) return "—";
+    const p = profiles.find((x) => x.id === id);
+    return p?.display_name || p?.email || "Unknown";
+  };
+
+  const canApprove = (r: Request) => {
+    if (isAdmin) return true;
+    const proj = projects.find((p) => p.id === r.project_id);
+    return proj?.created_by === currentUserId;
+  };
+
+  return (
+    <Card>
+      <div className="flex items-center justify-between p-3 border-b border-border">
+        <div className="text-sm font-medium">All material requests</div>
+        <Select value={filter} onValueChange={(v) => setFilter(v as RequestStatus | "all")}>
+          <SelectTrigger className="w-[180px] h-8 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            {(Object.keys(REQ_STATUS) as RequestStatus[]).map((s) => (
+              <SelectItem key={s} value={s}>{REQ_STATUS[s].label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="p-12 text-center text-sm text-muted-foreground">
+          No requests {filter !== "all" ? `with status "${REQ_STATUS[filter as RequestStatus].label}"` : "yet"}.
+        </div>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Material</TableHead>
+              <TableHead>Project</TableHead>
+              <TableHead className="text-right">Qty</TableHead>
+              <TableHead>Requested by</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>When</TableHead>
+              <TableHead></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filtered.map((r) => {
+              const meta = REQ_STATUS[r.status];
+              const Icon = meta.icon;
+              const allowed = canApprove(r);
+              return (
+                <TableRow key={r.id}>
+                  <TableCell className="font-medium">{matName(r.material_id)}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">{projName(r.project_id)}</TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {Number(r.quantity)} {matUnit(r.material_id)}
+                  </TableCell>
+                  <TableCell className="text-xs">{userName(r.requested_by)}</TableCell>
+                  <TableCell>
+                    <span
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
+                      style={{ background: `${meta.color}1f`, color: meta.color }}
+                    >
+                      <Icon className="w-3 h-3" />
+                      {meta.label}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {format(new Date(r.created_at), "MMM d, yyyy")}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-1">
+                      {allowed && r.status === "requested" && (
+                        <>
+                          <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => onUpdate(r.id, "approved")}>
+                            Approve
+                          </Button>
+                          <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive" onClick={() => {
+                            const reason = prompt("Decline reason (optional):") ?? undefined;
+                            onUpdate(r.id, "declined", reason || undefined);
+                          }}>
+                            Decline
+                          </Button>
+                        </>
+                      )}
+                      {allowed && r.status === "approved" && (
+                        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => onUpdate(r.id, "arrived")}>
+                          Mark arrived
+                        </Button>
+                      )}
+                      {allowed && r.status === "arrived" && (
+                        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => onUpdate(r.id, "received")}>
+                          Mark received
+                        </Button>
+                      )}
+                      {(isAdmin || r.requested_by === currentUserId) && (
+                        <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => onDelete(r.id)}>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      )}
+    </Card>
+  );
+}
