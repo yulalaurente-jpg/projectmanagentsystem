@@ -116,7 +116,27 @@ function InventoryPage() {
     setMaterials((m) => m.filter((x) => x.id !== id));
   };
 
+  const updateRequestStatus = async (id: string, status: RequestStatus, reason?: string) => {
+    const patch: Partial<Request> = { status };
+    if (status === "approved") { patch.approved_by = user?.id ?? null; patch.approved_at = new Date().toISOString(); }
+    if (status === "arrived")  { patch.arrived_at = new Date().toISOString(); }
+    if (status === "received") { patch.received_at = new Date().toISOString(); }
+    if (status === "declined") { patch.declined_at = new Date().toISOString(); patch.declined_reason = reason ?? null; }
+    const { error } = await supabase.from("material_requests").update(patch).eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    setRequests((rs) => rs.map((x) => (x.id === id ? { ...x, ...patch } as Request : x)));
+    toast.success(REQ_STATUS[status].label);
+  };
+
+  const deleteRequest = async (id: string) => {
+    if (!confirm("Delete this request?")) return;
+    const { error } = await supabase.from("material_requests").delete().eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    setRequests((rs) => rs.filter((x) => x.id !== id));
+  };
+
   const lowStock = materials.filter((m) => m.stock_quantity <= m.min_stock).length;
+  const pendingRequests = requests.filter((r) => r.status === "requested").length;
 
   return (
     <>
