@@ -60,17 +60,33 @@ export const Route = createFileRoute("/inventory")({
 function InventoryPage() {
   const { user } = useAuth();
   const [materials, setMaterials] = useState<Material[]>([]);
+  const [requests, setRequests] = useState<Request[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<Material | null>(null);
 
   const load = async () => {
     setLoading(true);
-    const { data } = await supabase.from("materials").select("*").order("name");
-    setMaterials(data ?? []);
+    const [{ data: m }, { data: r }, { data: pr }, { data: pf }] = await Promise.all([
+      supabase.from("materials").select("*").order("name"),
+      supabase.from("material_requests").select("*").order("created_at", { ascending: false }),
+      supabase.from("projects").select("*"),
+      supabase.from("profiles").select("*"),
+    ]);
+    setMaterials(m ?? []);
+    setRequests(r ?? []);
+    setProjects(pr ?? []);
+    setProfiles(pf ?? []);
+    if (user) {
+      const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", user.id);
+      setIsAdmin(!!roles?.some((x) => x.role === "admin"));
+    }
     setLoading(false);
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [user?.id]);
 
   const saveMaterial = async (input: Partial<Material> & { name: string }): Promise<void> => {
     if (!user) return;
