@@ -226,6 +226,10 @@ function ProjectDetail() {
         )}
       </div>
 
+      <div className="border-t border-border bg-card px-6 py-4 space-y-4">
+        <ChecklistPanel scope="project" scopeId={projectId} profiles={profiles} />
+      </div>
+
       <CreateTaskDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
