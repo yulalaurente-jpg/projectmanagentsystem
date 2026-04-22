@@ -52,11 +52,11 @@ function InventoryPage() {
   };
   useEffect(() => { load(); }, []);
 
-  const saveMaterial = async (input: Partial<Material> & { name: string }) => {
+  const saveMaterial = async (input: Partial<Material> & { name: string }): Promise<void> => {
     if (!user) return;
     if (editing) {
       const { error } = await supabase.from("materials").update(input).eq("id", editing.id);
-      if (error) return toast.error(error.message);
+      if (error) { toast.error(error.message); return; }
       setMaterials((m) => m.map((x) => (x.id === editing.id ? { ...x, ...input } as Material : x)));
       toast.success("Updated");
     } else {
@@ -65,7 +65,7 @@ function InventoryPage() {
         .insert({ ...input, created_by: user.id, name: input.name })
         .select()
         .single();
-      if (error) return toast.error(error.message);
+      if (error) { toast.error(error.message); return; }
       if (data) setMaterials((m) => [...m, data].sort((a, b) => a.name.localeCompare(b.name)));
       toast.success("Material added");
     }
@@ -76,7 +76,7 @@ function InventoryPage() {
   const deleteMaterial = async (id: string) => {
     if (!confirm("Delete this material? Existing requests will be removed too.")) return;
     const { error } = await supabase.from("materials").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setMaterials((m) => m.filter((x) => x.id !== id));
   };
 
