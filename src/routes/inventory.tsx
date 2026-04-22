@@ -16,10 +16,30 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Package, AlertTriangle, Trash2, Pencil } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Plus, Package, AlertTriangle, Trash2, Pencil,
+  Clock, CheckCircle2, Truck, PackageCheck, XCircle,
+} from "lucide-react";
 import { toast } from "sonner";
+import { useAuth as _useAuth } from "@/context/AuthContext";
+import type { Enums } from "@/integrations/supabase/types";
+import { format } from "date-fns";
 
 type Material = Tables<"materials">;
+type Request = Tables<"material_requests">;
+type Project = Tables<"projects">;
+type Profile = Tables<"profiles">;
+type RequestStatus = Enums<"material_request_status">;
+
+const REQ_STATUS: Record<RequestStatus, { label: string; icon: typeof Clock; color: string }> = {
+  requested: { label: "Requested", icon: Clock, color: "#f59e0b" },
+  approved:  { label: "Approved",  icon: CheckCircle2, color: "#3b82f6" },
+  arrived:   { label: "Arrived",   icon: Truck, color: "#8b5cf6" },
+  received:  { label: "Received",  icon: PackageCheck, color: "#10b981" },
+  declined:  { label: "Declined",  icon: XCircle, color: "#ef4444" },
+};
 
 export const Route = createFileRoute("/inventory")({
   head: () => ({
