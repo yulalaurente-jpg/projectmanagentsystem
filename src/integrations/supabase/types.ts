@@ -183,6 +183,120 @@ export type Database = {
           },
         ]
       }
+      material_requests: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          arrived_at: string | null
+          created_at: string
+          declined_at: string | null
+          declined_reason: string | null
+          id: string
+          material_id: string
+          notes: string | null
+          project_id: string
+          quantity: number
+          received_at: string | null
+          requested_by: string
+          status: Database["public"]["Enums"]["material_request_status"]
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          arrived_at?: string | null
+          created_at?: string
+          declined_at?: string | null
+          declined_reason?: string | null
+          id?: string
+          material_id: string
+          notes?: string | null
+          project_id: string
+          quantity: number
+          received_at?: string | null
+          requested_by: string
+          status?: Database["public"]["Enums"]["material_request_status"]
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          arrived_at?: string | null
+          created_at?: string
+          declined_at?: string | null
+          declined_reason?: string | null
+          id?: string
+          material_id?: string
+          notes?: string | null
+          project_id?: string
+          quantity?: number
+          received_at?: string | null
+          requested_by?: string
+          status?: Database["public"]["Enums"]["material_request_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "material_requests_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_requests_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      materials: {
+        Row: {
+          category: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          min_stock: number
+          name: string
+          sku: string | null
+          stock_quantity: number
+          unit: string
+          unit_cost: number | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          min_stock?: number
+          name: string
+          sku?: string | null
+          stock_quantity?: number
+          unit?: string
+          unit_cost?: number | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          min_stock?: number
+          name?: string
+          sku?: string | null
+          stock_quantity?: number
+          unit?: string
+          unit_cost?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -489,6 +603,12 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      material_request_status:
+        | "requested"
+        | "approved"
+        | "arrived"
+        | "received"
+        | "declined"
       task_priority: "low" | "medium" | "high" | "urgent"
       task_status: "todo" | "in_progress" | "in_review" | "done"
     }
@@ -619,6 +739,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      material_request_status: [
+        "requested",
+        "approved",
+        "arrived",
+        "received",
+        "declined",
+      ],
       task_priority: ["low", "medium", "high", "urgent"],
       task_status: ["todo", "in_progress", "in_review", "done"],
     },
