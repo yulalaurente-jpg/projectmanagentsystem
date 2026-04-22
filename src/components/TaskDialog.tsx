@@ -12,6 +12,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Plus, Trash2, Send, ListTree } from "lucide-react";
 import { StatusBadge, PriorityBadge, AssigneeAvatar } from "@/components/TaskBadges";
 import { toast } from "sonner";
+import { ChecklistPanel } from "@/components/ChecklistPanel";
 
 type Task = Tables<"tasks">;
 type Profile = Tables<"profiles">;
@@ -138,6 +139,10 @@ export function TaskDialog({
                 </div>
               )}
             </div>
+
+            <Separator />
+
+            <ChecklistPanel scope="task" scopeId={task.id} profiles={profiles} />
 
             <Separator />
 

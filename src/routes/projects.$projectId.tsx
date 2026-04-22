@@ -13,6 +13,7 @@ import { CreateTaskDialog } from "@/components/CreateTaskDialog";
 import { KanbanBoard } from "@/components/views/KanbanBoard";
 import { GanttChart } from "@/components/views/GanttChart";
 import { ChecklistPanel } from "@/components/ChecklistPanel";
+import { MaterialsPanel } from "@/components/MaterialsPanel";
 import type { Tables, Enums } from "@/integrations/supabase/types";
 
 export const Route = createFileRoute("/projects/$projectId")({
@@ -224,6 +225,17 @@ function ProjectDetail() {
         {view === "gantt" && (
           <GanttChart tasks={tasks} profiles={profiles} onOpen={(id) => setOpenTaskId(id)} />
         )}
+      </div>
+
+      <div className="border-t border-border bg-card px-6 py-4 space-y-4">
+        <ChecklistPanel scope="project" scopeId={projectId} profiles={profiles} />
+      </div>
+
+      <div className="border-t border-border bg-card px-6 py-4 space-y-4">
+        <MaterialsPanel
+          projectId={projectId}
+          canApprove={user?.id === project.created_by}
+        />
       </div>
 
       <CreateTaskDialog
