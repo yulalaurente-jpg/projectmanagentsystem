@@ -187,6 +187,9 @@ function FolderPage() {
             <TabsTrigger value="files" className="rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none">
               Files ({files.length})
             </TabsTrigger>
+            <TabsTrigger value="discussion" className="rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none">
+              Discussion
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -250,21 +253,37 @@ function FolderPage() {
             <Card className="overflow-hidden">
               <div className="divide-y divide-border">
                 {files.map((f) => (
-                  <div key={f.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-accent/30">
-                    <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate">{f.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {formatBytes(f.size_bytes)} · {new Date(f.created_at).toLocaleDateString()}
+                  <div key={f.id}>
+                    <div className="flex items-center gap-3 px-4 py-2.5 hover:bg-accent/30">
+                      <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium truncate">{f.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatBytes(f.size_bytes)} · {new Date(f.created_at).toLocaleDateString()}
+                        </div>
                       </div>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setCommentingFileId(commentingFileId === f.id ? null : f.id)}>
+                        <MessageSquare className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => downloadFile(f)}><Download className="w-3.5 h-3.5" /></Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => deleteFile(f)}><Trash2 className="w-3.5 h-3.5" /></Button>
                     </div>
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => downloadFile(f)}><Download className="w-3.5 h-3.5" /></Button>
-                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => deleteFile(f)}><Trash2 className="w-3.5 h-3.5" /></Button>
+                    {commentingFileId === f.id && (
+                      <div className="px-4 py-3 bg-muted/20 border-t border-border">
+                        <CommentsThread targetType="file" targetId={f.id} profiles={profiles} compact />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
             </Card>
           )}
+        </TabsContent>
+
+        <TabsContent value="discussion" className="flex-1 overflow-auto p-6 m-0">
+          <Card className="p-5 max-w-3xl">
+            <CommentsThread targetType="folder" targetId={folderId} profiles={profiles} />
+          </Card>
         </TabsContent>
       </Tabs>
 
