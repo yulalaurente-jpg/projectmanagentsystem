@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Plus, Package, AlertTriangle, Trash2, Pencil,
+  Plus, Package, AlertTriangle, Trash2, Pencil, Send,
   Clock, CheckCircle2, Truck, PackageCheck, XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -66,6 +66,8 @@ function InventoryPage() {
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<Material | null>(null);
+  const [requestOpen, setRequestOpen] = useState(false);
+  const [requestMaterial, setRequestMaterial] = useState<Material | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -134,6 +136,20 @@ function InventoryPage() {
     setRequests((rs) => rs.filter((x) => x.id !== id));
   };
 
+  const submitRequest = async (input: { material_id: string; project_id: string; quantity: number; notes: string }) => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from("material_requests")
+      .insert({ ...input, requested_by: user.id })
+      .select()
+      .single();
+    if (error) { toast.error(error.message); return; }
+    if (data) setRequests((r) => [data, ...r]);
+    toast.success("Request submitted");
+    setRequestOpen(false);
+    setRequestMaterial(null);
+  };
+
   const lowStock = materials.filter((m) => m.stock_quantity <= m.min_stock).length;
   const pendingRequests = requests.filter((r) => r.status === "requested").length;
 
@@ -147,9 +163,19 @@ function InventoryPage() {
             </h1>
             <p className="text-xs text-muted-foreground">Materials catalog and stock levels</p>
           </div>
-          <Button size="sm" onClick={() => { setEditing(null); setCreateOpen(true); }}>
-            <Plus className="w-4 h-4 mr-1.5" /> New material
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => { setRequestMaterial(null); setRequestOpen(true); }}
+              disabled={materials.length === 0 || projects.length === 0}
+            >
+              <Send className="w-4 h-4 mr-1.5" /> Request material
+            </Button>
+            <Button size="sm" onClick={() => { setEditing(null); setCreateOpen(true); }}>
+              <Plus className="w-4 h-4 mr-1.5" /> New material
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -212,6 +238,15 @@ function InventoryPage() {
                         {m.unit_cost ? `$${Number(m.unit_cost).toFixed(2)}` : "—"}
                       </TableCell>
                       <TableCell className="text-right">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs"
+                          disabled={projects.length === 0}
+                          onClick={() => { setRequestMaterial(m); setRequestOpen(true); }}
+                        >
+                          <Send className="w-3 h-3 mr-1" /> Request
+                        </Button>
                         <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditing(m); setCreateOpen(true); }}>
                           <Pencil className="w-3.5 h-3.5" />
                         </Button>
@@ -248,6 +283,15 @@ function InventoryPage() {
         onOpenChange={(v) => { setCreateOpen(v); if (!v) setEditing(null); }}
         editing={editing}
         onSave={saveMaterial}
+      />
+
+      <RequestMaterialDialog
+        open={requestOpen}
+        onOpenChange={(v) => { setRequestOpen(v); if (!v) setRequestMaterial(null); }}
+        materials={materials}
+        projects={projects}
+        defaultMaterial={requestMaterial}
+        onSubmit={submitRequest}
       />
     </>
   );
