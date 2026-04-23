@@ -17,8 +17,8 @@ import { DynamicIcon, IconPicker, ColorPicker } from "@/components/IconPicker";
 export const Route = createFileRoute("/templates")({
   head: () => ({
     meta: [
-      { title: "Checklist Templates — Trackr" },
-      { name: "description", content: "Reusable checklist blueprints for projects and tasks." },
+      { title: "Checklists — Trackr" },
+      { name: "description", content: "Reusable checklists for projects and tasks." },
     ],
   }),
   component: () => (
@@ -110,13 +110,15 @@ function TemplatesPage() {
   return (
     <>
       <header className="h-14 border-b border-border px-6 flex items-center justify-between bg-card">
-        <h1 className="text-base font-semibold tracking-tight">Checklist Templates</h1>
+        <h1 className="text-base font-semibold tracking-tight flex items-center gap-2">
+          <ListChecks className="w-4 h-4" /> Checklists
+        </h1>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="sm"><Plus className="w-4 h-4 mr-1.5" /> New template</Button>
+            <Button size="sm"><Plus className="w-4 h-4 mr-1.5" /> New checklist</Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
-            <DialogHeader><DialogTitle>Create template</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Create checklist</DialogTitle></DialogHeader>
             <form onSubmit={create} className="space-y-3">
               <div>
                 <Label>Name</Label>
@@ -145,9 +147,9 @@ function TemplatesPage() {
         ) : templates.length === 0 ? (
           <Card className="p-12 text-center">
             <ListChecks className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
-            <h2 className="text-base font-semibold">No templates yet</h2>
+            <h2 className="text-base font-semibold">No checklists yet</h2>
             <p className="text-sm text-muted-foreground mb-4">Build reusable checklists you can apply to any project or task.</p>
-            <Button onClick={() => setOpen(true)}><Plus className="w-4 h-4 mr-1.5" /> New template</Button>
+            <Button onClick={() => setOpen(true)}><Plus className="w-4 h-4 mr-1.5" /> New checklist</Button>
           </Card>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
