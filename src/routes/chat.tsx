@@ -132,10 +132,10 @@ function ChatPage() {
       toast.error(error?.message ?? "Failed");
       return;
     }
-    const { error: mErr } = await supabase.from("chat_channel_members").insert([
-      { channel_id: ch.id, user_id: user.id },
-      { channel_id: ch.id, user_id: otherUserId },
-    ]);
+    // Creator is auto-added by DB trigger; only need to add the other participant.
+    const { error: mErr } = await supabase
+      .from("chat_channel_members")
+      .insert({ channel_id: ch.id, user_id: otherUserId });
     if (mErr) {
       toast.error(mErr.message);
       return;
