@@ -14,6 +14,8 @@ import type { Tables } from "@/integrations/supabase/types";
 import { DynamicIcon, IconPicker, ColorPicker } from "@/components/IconPicker";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { CommentsThread } from "@/components/comments/CommentsThread";
+import { MessageSquare } from "lucide-react";
 
 export const Route = createFileRoute("/reports/$folderId")({
   head: () => ({
@@ -34,6 +36,7 @@ export const Route = createFileRoute("/reports/$folderId")({
 type Folder = Tables<"report_folders">;
 type Report = Tables<"reports">;
 type FileRow = Tables<"report_files">;
+type Profile = Tables<"profiles">;
 
 function FolderPage() {
   const { folderId } = Route.useParams();
@@ -41,6 +44,8 @@ function FolderPage() {
   const [folder, setFolder] = useState<Folder | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
   const [files, setFiles] = useState<FileRow[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [commentingFileId, setCommentingFileId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [editingReportId, setEditingReportId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -50,14 +55,16 @@ function FolderPage() {
 
   const load = async () => {
     setLoading(true);
-    const [{ data: f }, { data: r }, { data: fs }] = await Promise.all([
+    const [{ data: f }, { data: r }, { data: fs }, { data: pf }] = await Promise.all([
       supabase.from("report_folders").select("*").eq("id", folderId).maybeSingle(),
       supabase.from("reports").select("*").eq("folder_id", folderId).order("updated_at", { ascending: false }),
       supabase.from("report_files").select("*").eq("folder_id", folderId).order("created_at", { ascending: false }),
+      supabase.from("profiles").select("*"),
     ]);
     setFolder(f ?? null);
     setReports(r ?? []);
     setFiles(fs ?? []);
+    setProfiles(pf ?? []);
     setLoading(false);
   };
 
