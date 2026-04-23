@@ -533,3 +533,81 @@ function RequestsPanel({
     </Card>
   );
 }
+
+function RequestMaterialDialog({
+  open, onOpenChange, materials, projects, defaultMaterial, onSubmit,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  materials: Material[];
+  projects: Project[];
+  defaultMaterial: Material | null;
+  onSubmit: (input: { material_id: string; project_id: string; quantity: number; notes: string }) => Promise<void> | void;
+}) {
+  const [materialId, setMaterialId] = useState("");
+  const [projectId, setProjectId] = useState("");
+  const [quantity, setQuantity] = useState("1");
+  const [notes, setNotes] = useState("");
+
+  useEffect(() => {
+    if (open) {
+      setMaterialId(defaultMaterial?.id ?? "");
+      setProjectId(projects[0]?.id ?? "");
+      setQuantity("1");
+      setNotes("");
+    }
+  }, [open, defaultMaterial, projects]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Request material</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label>Material</Label>
+            <Select value={materialId} onValueChange={setMaterialId}>
+              <SelectTrigger><SelectValue placeholder="Select material" /></SelectTrigger>
+              <SelectContent>
+                {materials.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.name} <span className="text-muted-foreground">· {m.stock_quantity} {m.unit}</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Project</Label>
+            <Select value={projectId} onValueChange={setProjectId}>
+              <SelectTrigger><SelectValue placeholder="Select project" /></SelectTrigger>
+              <SelectContent>
+                {projects.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>{p.key} · {p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Quantity</Label>
+            <Input type="number" min="0.01" step="0.01" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
+          </div>
+          <div>
+            <Label>Notes (optional)</Label>
+            <Textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Why do you need this?" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button
+            disabled={!materialId || !projectId || !(parseFloat(quantity) > 0)}
+            onClick={() => onSubmit({ material_id: materialId, project_id: projectId, quantity: parseFloat(quantity), notes })}
+          >
+            Submit request
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
