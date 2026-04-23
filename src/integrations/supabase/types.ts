@@ -14,6 +14,111 @@ export type Database = {
   }
   public: {
     Tables: {
+      chat_channel_members: {
+        Row: {
+          channel_id: string
+          created_at: string
+          id: string
+          last_read_at: string
+          user_id: string
+        }
+        Insert: {
+          channel_id: string
+          created_at?: string
+          id?: string
+          last_read_at?: string
+          user_id: string
+        }
+        Update: {
+          channel_id?: string
+          created_at?: string
+          id?: string
+          last_read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_channel_members_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "chat_channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_channels: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          name: string | null
+          project_id: string | null
+          type: Database["public"]["Enums"]["chat_channel_type"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          name?: string | null
+          project_id?: string | null
+          type: Database["public"]["Enums"]["chat_channel_type"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string | null
+          project_id?: string | null
+          type?: Database["public"]["Enums"]["chat_channel_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_channels_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_messages: {
+        Row: {
+          channel_id: string
+          content: string
+          created_at: string
+          edited_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          channel_id: string
+          content: string
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          channel_id?: string
+          content?: string
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "chat_channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checklist_items: {
         Row: {
           assignee_id: string | null
@@ -354,6 +459,39 @@ export type Database = {
         }
         Relationships: []
       }
+      report_comments: {
+        Row: {
+          content: string
+          created_at: string
+          edited_at: string | null
+          id: string
+          mentions: string[] | null
+          target_id: string
+          target_type: Database["public"]["Enums"]["comment_target_type"]
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          mentions?: string[] | null
+          target_id: string
+          target_type: Database["public"]["Enums"]["comment_target_type"]
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          mentions?: string[] | null
+          target_id?: string
+          target_type?: Database["public"]["Enums"]["comment_target_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       report_files: {
         Row: {
           created_at: string
@@ -600,9 +738,15 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_channel_member: {
+        Args: { _channel_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "user"
+      chat_channel_type: "project" | "direct"
+      comment_target_type: "folder" | "file"
       material_request_status:
         | "requested"
         | "approved"
@@ -739,6 +883,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      chat_channel_type: ["project", "direct"],
+      comment_target_type: ["folder", "file"],
       material_request_status: [
         "requested",
         "approved",

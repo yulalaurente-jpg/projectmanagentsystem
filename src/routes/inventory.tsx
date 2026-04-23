@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Plus, Package, AlertTriangle, Trash2, Pencil,
+  Plus, Package, AlertTriangle, Trash2, Pencil, Send,
   Clock, CheckCircle2, Truck, PackageCheck, XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -66,6 +66,8 @@ function InventoryPage() {
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<Material | null>(null);
+  const [requestOpen, setRequestOpen] = useState(false);
+  const [requestMaterial, setRequestMaterial] = useState<Material | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -134,6 +136,20 @@ function InventoryPage() {
     setRequests((rs) => rs.filter((x) => x.id !== id));
   };
 
+  const submitRequest = async (input: { material_id: string; project_id: string; quantity: number; notes: string }) => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from("material_requests")
+      .insert({ ...input, requested_by: user.id })
+      .select()
+      .single();
+    if (error) { toast.error(error.message); return; }
+    if (data) setRequests((r) => [data, ...r]);
+    toast.success("Request submitted");
+    setRequestOpen(false);
+    setRequestMaterial(null);
+  };
+
   const lowStock = materials.filter((m) => m.stock_quantity <= m.min_stock).length;
   const pendingRequests = requests.filter((r) => r.status === "requested").length;
 
@@ -147,9 +163,19 @@ function InventoryPage() {
             </h1>
             <p className="text-xs text-muted-foreground">Materials catalog and stock levels</p>
           </div>
-          <Button size="sm" onClick={() => { setEditing(null); setCreateOpen(true); }}>
-            <Plus className="w-4 h-4 mr-1.5" /> New material
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => { setRequestMaterial(null); setRequestOpen(true); }}
+              disabled={materials.length === 0 || projects.length === 0}
+            >
+              <Send className="w-4 h-4 mr-1.5" /> Request material
+            </Button>
+            <Button size="sm" onClick={() => { setEditing(null); setCreateOpen(true); }}>
+              <Plus className="w-4 h-4 mr-1.5" /> New material
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -212,6 +238,15 @@ function InventoryPage() {
                         {m.unit_cost ? `$${Number(m.unit_cost).toFixed(2)}` : "—"}
                       </TableCell>
                       <TableCell className="text-right">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs"
+                          disabled={projects.length === 0}
+                          onClick={() => { setRequestMaterial(m); setRequestOpen(true); }}
+                        >
+                          <Send className="w-3 h-3 mr-1" /> Request
+                        </Button>
                         <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setEditing(m); setCreateOpen(true); }}>
                           <Pencil className="w-3.5 h-3.5" />
                         </Button>
@@ -248,6 +283,15 @@ function InventoryPage() {
         onOpenChange={(v) => { setCreateOpen(v); if (!v) setEditing(null); }}
         editing={editing}
         onSave={saveMaterial}
+      />
+
+      <RequestMaterialDialog
+        open={requestOpen}
+        onOpenChange={(v) => { setRequestOpen(v); if (!v) setRequestMaterial(null); }}
+        materials={materials}
+        projects={projects}
+        defaultMaterial={requestMaterial}
+        onSubmit={submitRequest}
       />
     </>
   );
@@ -487,5 +531,83 @@ function RequestsPanel({
         </Table>
       )}
     </Card>
+  );
+}
+
+function RequestMaterialDialog({
+  open, onOpenChange, materials, projects, defaultMaterial, onSubmit,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  materials: Material[];
+  projects: Project[];
+  defaultMaterial: Material | null;
+  onSubmit: (input: { material_id: string; project_id: string; quantity: number; notes: string }) => Promise<void> | void;
+}) {
+  const [materialId, setMaterialId] = useState("");
+  const [projectId, setProjectId] = useState("");
+  const [quantity, setQuantity] = useState("1");
+  const [notes, setNotes] = useState("");
+
+  useEffect(() => {
+    if (open) {
+      setMaterialId(defaultMaterial?.id ?? "");
+      setProjectId(projects[0]?.id ?? "");
+      setQuantity("1");
+      setNotes("");
+    }
+  }, [open, defaultMaterial, projects]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Request material</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label>Material</Label>
+            <Select value={materialId} onValueChange={setMaterialId}>
+              <SelectTrigger><SelectValue placeholder="Select material" /></SelectTrigger>
+              <SelectContent>
+                {materials.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.name} <span className="text-muted-foreground">· {m.stock_quantity} {m.unit}</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Project</Label>
+            <Select value={projectId} onValueChange={setProjectId}>
+              <SelectTrigger><SelectValue placeholder="Select project" /></SelectTrigger>
+              <SelectContent>
+                {projects.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>{p.key} · {p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Quantity</Label>
+            <Input type="number" min="0.01" step="0.01" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
+          </div>
+          <div>
+            <Label>Notes (optional)</Label>
+            <Textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Why do you need this?" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button
+            disabled={!materialId || !projectId || !(parseFloat(quantity) > 0)}
+            onClick={() => onSubmit({ material_id: materialId, project_id: projectId, quantity: parseFloat(quantity), notes })}
+          >
+            Submit request
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

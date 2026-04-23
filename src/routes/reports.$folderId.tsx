@@ -14,6 +14,8 @@ import type { Tables } from "@/integrations/supabase/types";
 import { DynamicIcon, IconPicker, ColorPicker } from "@/components/IconPicker";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { CommentsThread } from "@/components/comments/CommentsThread";
+import { MessageSquare } from "lucide-react";
 
 export const Route = createFileRoute("/reports/$folderId")({
   head: () => ({
@@ -34,6 +36,7 @@ export const Route = createFileRoute("/reports/$folderId")({
 type Folder = Tables<"report_folders">;
 type Report = Tables<"reports">;
 type FileRow = Tables<"report_files">;
+type Profile = Tables<"profiles">;
 
 function FolderPage() {
   const { folderId } = Route.useParams();
@@ -41,6 +44,8 @@ function FolderPage() {
   const [folder, setFolder] = useState<Folder | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
   const [files, setFiles] = useState<FileRow[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [commentingFileId, setCommentingFileId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [editingReportId, setEditingReportId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -50,14 +55,16 @@ function FolderPage() {
 
   const load = async () => {
     setLoading(true);
-    const [{ data: f }, { data: r }, { data: fs }] = await Promise.all([
+    const [{ data: f }, { data: r }, { data: fs }, { data: pf }] = await Promise.all([
       supabase.from("report_folders").select("*").eq("id", folderId).maybeSingle(),
       supabase.from("reports").select("*").eq("folder_id", folderId).order("updated_at", { ascending: false }),
       supabase.from("report_files").select("*").eq("folder_id", folderId).order("created_at", { ascending: false }),
+      supabase.from("profiles").select("*"),
     ]);
     setFolder(f ?? null);
     setReports(r ?? []);
     setFiles(fs ?? []);
+    setProfiles(pf ?? []);
     setLoading(false);
   };
 
@@ -180,6 +187,9 @@ function FolderPage() {
             <TabsTrigger value="files" className="rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none">
               Files ({files.length})
             </TabsTrigger>
+            <TabsTrigger value="discussion" className="rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:shadow-none">
+              Discussion
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -243,21 +253,37 @@ function FolderPage() {
             <Card className="overflow-hidden">
               <div className="divide-y divide-border">
                 {files.map((f) => (
-                  <div key={f.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-accent/30">
-                    <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate">{f.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {formatBytes(f.size_bytes)} · {new Date(f.created_at).toLocaleDateString()}
+                  <div key={f.id}>
+                    <div className="flex items-center gap-3 px-4 py-2.5 hover:bg-accent/30">
+                      <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium truncate">{f.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatBytes(f.size_bytes)} · {new Date(f.created_at).toLocaleDateString()}
+                        </div>
                       </div>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setCommentingFileId(commentingFileId === f.id ? null : f.id)}>
+                        <MessageSquare className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => downloadFile(f)}><Download className="w-3.5 h-3.5" /></Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => deleteFile(f)}><Trash2 className="w-3.5 h-3.5" /></Button>
                     </div>
-                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => downloadFile(f)}><Download className="w-3.5 h-3.5" /></Button>
-                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => deleteFile(f)}><Trash2 className="w-3.5 h-3.5" /></Button>
+                    {commentingFileId === f.id && (
+                      <div className="px-4 py-3 bg-muted/20 border-t border-border">
+                        <CommentsThread targetType="file" targetId={f.id} profiles={profiles} compact />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
             </Card>
           )}
+        </TabsContent>
+
+        <TabsContent value="discussion" className="flex-1 overflow-auto p-6 m-0">
+          <Card className="p-5 max-w-3xl">
+            <CommentsThread targetType="folder" targetId={folderId} profiles={profiles} />
+          </Card>
         </TabsContent>
       </Tabs>
 
