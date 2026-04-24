@@ -38,6 +38,7 @@ export const Route = createFileRoute("/projects/$projectId")({
 export type Task = Tables<"tasks">;
 export type Project = Tables<"projects">;
 export type Profile = Tables<"profiles">;
+export type Employee = Tables<"employees">;
 
 const STATUSES: { value: Enums<"task_status">; label: string; color: string }[] = [
   { value: "todo", label: "To Do", color: "var(--status-todo)" },
@@ -52,6 +53,7 @@ function ProjectDetail() {
   const [project, setProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [projectEmployees, setProjectEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -62,14 +64,22 @@ function ProjectDetail() {
 
   const load = async () => {
     setLoading(true);
-    const [{ data: p }, { data: t }, { data: pr }] = await Promise.all([
+    const [{ data: p }, { data: t }, { data: pr }, { data: pe }] = await Promise.all([
       supabase.from("projects").select("*").eq("id", projectId).maybeSingle(),
       supabase.from("tasks").select("*").eq("project_id", projectId).order("created_at", { ascending: true }),
       supabase.from("profiles").select("*"),
+      supabase
+        .from("project_employees")
+        .select("employee:employees(*)")
+        .eq("project_id", projectId),
     ]);
     setProject(p ?? null);
     setTasks(t ?? []);
     setProfiles(pr ?? []);
+    const emps = ((pe ?? []) as Array<{ employee: Employee | null }>)
+      .map((row) => row.employee)
+      .filter((e): e is Employee => !!e);
+    setProjectEmployees(emps);
     setLoading(false);
   };
 
@@ -300,6 +310,7 @@ function ProjectDetail() {
         open={createOpen}
         onOpenChange={setCreateOpen}
         profiles={profiles}
+        employees={projectEmployees}
         parentTaskId={createParent}
         onCreate={createTask}
       />
@@ -307,6 +318,7 @@ function ProjectDetail() {
         task={openTask}
         projectKey={project.key}
         profiles={profiles}
+        employees={projectEmployees}
         subtasks={openTask ? subtasksOf(openTask.id) : []}
         onClose={() => setOpenTaskId(null)}
         onUpdate={updateTask}

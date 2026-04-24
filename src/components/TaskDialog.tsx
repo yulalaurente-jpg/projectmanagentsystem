@@ -16,12 +16,14 @@ import { ChecklistPanel } from "@/components/ChecklistPanel";
 
 type Task = Tables<"tasks">;
 type Profile = Tables<"profiles">;
+type Employee = Tables<"employees">;
 type Comment = Tables<"task_comments">;
 
 export function TaskDialog({
   task,
   projectKey,
   profiles,
+  employees,
   subtasks,
   onClose,
   onUpdate,
@@ -31,6 +33,7 @@ export function TaskDialog({
   task: Task | null;
   projectKey: string;
   profiles: Profile[];
+  employees?: Employee[];
   subtasks: Task[];
   onClose: () => void;
   onUpdate: (id: string, patch: Partial<Task>) => Promise<void>;
@@ -224,6 +227,24 @@ export function TaskDialog({
                 </SelectContent>
               </Select>
             </Field>
+            {employees && employees.length > 0 && (
+              <Field label="Project employee">
+                <Select
+                  value={task.employee_id ?? "none"}
+                  onValueChange={(v) => onUpdate(task.id, { employee_id: v === "none" ? null : v })}
+                >
+                  <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {employees.map((e) => (
+                      <SelectItem key={e.id} value={e.id}>
+                        {e.full_name}{e.position ? ` · ${e.position}` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+            )}
             <Field label="Due date">
               <Input
                 type="date"
