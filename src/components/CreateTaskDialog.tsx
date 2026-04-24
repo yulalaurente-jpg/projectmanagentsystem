@@ -11,12 +11,14 @@ export function CreateTaskDialog({
   open,
   onOpenChange,
   profiles,
+  employees,
   parentTaskId,
   onCreate,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   profiles: Tables<"profiles">[];
+  employees?: Tables<"employees">[];
   parentTaskId: string | null;
   onCreate: (input: {
     title: string;
@@ -24,6 +26,7 @@ export function CreateTaskDialog({
     status: Enums<"task_status">;
     priority: Enums<"task_priority">;
     assignee_id: string | null;
+    employee_id: string | null;
     due_date: string | null;
     start_date: string | null;
     labels: string[];
@@ -35,6 +38,7 @@ export function CreateTaskDialog({
   const [status, setStatus] = useState<Enums<"task_status">>("todo");
   const [priority, setPriority] = useState<Enums<"task_priority">>("medium");
   const [assignee, setAssignee] = useState<string>("none");
+  const [employee, setEmployee] = useState<string>("none");
   const [dueDate, setDueDate] = useState("");
   const [startDate, setStartDate] = useState("");
   const [labelsStr, setLabelsStr] = useState("");
@@ -42,7 +46,7 @@ export function CreateTaskDialog({
   useEffect(() => {
     if (open) {
       setTitle(""); setDescription(""); setStatus("todo"); setPriority("medium");
-      setAssignee("none"); setDueDate(""); setStartDate(""); setLabelsStr("");
+      setAssignee("none"); setEmployee("none"); setDueDate(""); setStartDate(""); setLabelsStr("");
     }
   }, [open]);
 
@@ -54,6 +58,7 @@ export function CreateTaskDialog({
       status,
       priority,
       assignee_id: assignee === "none" ? null : assignee,
+      employee_id: employee === "none" ? null : employee,
       due_date: dueDate ? new Date(dueDate).toISOString() : null,
       start_date: startDate ? new Date(startDate).toISOString() : null,
       labels: labelsStr.split(",").map((s) => s.trim()).filter(Boolean),
@@ -131,6 +136,22 @@ export function CreateTaskDialog({
             <Label>Labels (comma-separated)</Label>
             <Input value={labelsStr} onChange={(e) => setLabelsStr(e.target.value)} placeholder="bug, frontend" />
           </div>
+          {employees && employees.length > 0 && (
+            <div className="space-y-1.5">
+              <Label>Project employee</Label>
+              <Select value={employee} onValueChange={setEmployee}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  {employees.map((e) => (
+                    <SelectItem key={e.id} value={e.id}>
+                      {e.full_name}{e.position ? ` · ${e.position}` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button type="submit">Create</Button>
