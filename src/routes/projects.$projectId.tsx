@@ -310,6 +310,7 @@ function ProjectDetail() {
         open={createOpen}
         onOpenChange={setCreateOpen}
         profiles={profiles}
+        employees={projectEmployees}
         parentTaskId={createParent}
         onCreate={createTask}
       />
@@ -317,6 +318,7 @@ function ProjectDetail() {
         task={openTask}
         projectKey={project.key}
         profiles={profiles}
+        employees={projectEmployees}
         subtasks={openTask ? subtasksOf(openTask.id) : []}
         onClose={() => setOpenTaskId(null)}
         onUpdate={updateTask}
