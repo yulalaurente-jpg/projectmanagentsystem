@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TemplatesRouteImport } from './routes/templates'
 import { Route as InventoryRouteImport } from './routes/inventory'
+import { Route as EmployeesRouteImport } from './routes/employees'
+import { Route as DtrRouteImport } from './routes/dtr'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
@@ -29,6 +31,16 @@ const TemplatesRoute = TemplatesRouteImport.update({
 const InventoryRoute = InventoryRouteImport.update({
   id: '/inventory',
   path: '/inventory',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmployeesRoute = EmployeesRouteImport.update({
+  id: '/employees',
+  path: '/employees',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DtrRoute = DtrRouteImport.update({
+  id: '/dtr',
+  path: '/dtr',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChatRoute = ChatRouteImport.update({
@@ -83,6 +95,8 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof AnalyticsRoute
   '/auth': typeof AuthRoute
   '/chat': typeof ChatRoute
+  '/dtr': typeof DtrRoute
+  '/employees': typeof EmployeesRoute
   '/inventory': typeof InventoryRoute
   '/templates': typeof TemplatesRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
@@ -96,6 +110,8 @@ export interface FileRoutesByTo {
   '/analytics': typeof AnalyticsRoute
   '/auth': typeof AuthRoute
   '/chat': typeof ChatRoute
+  '/dtr': typeof DtrRoute
+  '/employees': typeof EmployeesRoute
   '/inventory': typeof InventoryRoute
   '/templates': typeof TemplatesRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
@@ -110,6 +126,8 @@ export interface FileRoutesById {
   '/analytics': typeof AnalyticsRoute
   '/auth': typeof AuthRoute
   '/chat': typeof ChatRoute
+  '/dtr': typeof DtrRoute
+  '/employees': typeof EmployeesRoute
   '/inventory': typeof InventoryRoute
   '/templates': typeof TemplatesRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
@@ -125,6 +143,8 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/auth'
     | '/chat'
+    | '/dtr'
+    | '/employees'
     | '/inventory'
     | '/templates'
     | '/projects/$projectId'
@@ -138,6 +158,8 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/auth'
     | '/chat'
+    | '/dtr'
+    | '/employees'
     | '/inventory'
     | '/templates'
     | '/projects/$projectId'
@@ -151,6 +173,8 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/auth'
     | '/chat'
+    | '/dtr'
+    | '/employees'
     | '/inventory'
     | '/templates'
     | '/projects/$projectId'
@@ -165,6 +189,8 @@ export interface RootRouteChildren {
   AnalyticsRoute: typeof AnalyticsRoute
   AuthRoute: typeof AuthRoute
   ChatRoute: typeof ChatRoute
+  DtrRoute: typeof DtrRoute
+  EmployeesRoute: typeof EmployeesRoute
   InventoryRoute: typeof InventoryRoute
   TemplatesRoute: typeof TemplatesRoute
   ProjectsProjectIdRoute: typeof ProjectsProjectIdRoute
@@ -187,6 +213,20 @@ declare module '@tanstack/react-router' {
       path: '/inventory'
       fullPath: '/inventory'
       preLoaderRoute: typeof InventoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/employees': {
+      id: '/employees'
+      path: '/employees'
+      fullPath: '/employees'
+      preLoaderRoute: typeof EmployeesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dtr': {
+      id: '/dtr'
+      path: '/dtr'
+      fullPath: '/dtr'
+      preLoaderRoute: typeof DtrRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/chat': {
@@ -261,6 +301,8 @@ const rootRouteChildren: RootRouteChildren = {
   AnalyticsRoute: AnalyticsRoute,
   AuthRoute: AuthRoute,
   ChatRoute: ChatRoute,
+  DtrRoute: DtrRoute,
+  EmployeesRoute: EmployeesRoute,
   InventoryRoute: InventoryRoute,
   TemplatesRoute: TemplatesRoute,
   ProjectsProjectIdRoute: ProjectsProjectIdRoute,
