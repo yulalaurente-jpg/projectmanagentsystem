@@ -84,6 +84,44 @@ export type Database = {
           },
         ]
       }
+      chat_message_attachments: {
+        Row: {
+          created_at: string
+          id: string
+          message_id: string
+          mime_type: string | null
+          name: string
+          size_bytes: number | null
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message_id: string
+          mime_type?: string | null
+          name: string
+          size_bytes?: number | null
+          storage_path: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message_id?: string
+          mime_type?: string | null
+          name?: string
+          size_bytes?: number | null
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_message_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_messages: {
         Row: {
           channel_id: string
@@ -288,6 +326,136 @@ export type Database = {
           },
         ]
       }
+      daily_time_records: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          break_in: string | null
+          break_out: string | null
+          created_at: string
+          created_by: string
+          employee_id: string
+          id: string
+          notes: string | null
+          overtime_hours: number
+          project_id: string | null
+          status: Database["public"]["Enums"]["dtr_status"]
+          task_id: string | null
+          time_in: string | null
+          time_out: string | null
+          total_hours: number | null
+          updated_at: string
+          work_date: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          break_in?: string | null
+          break_out?: string | null
+          created_at?: string
+          created_by: string
+          employee_id: string
+          id?: string
+          notes?: string | null
+          overtime_hours?: number
+          project_id?: string | null
+          status?: Database["public"]["Enums"]["dtr_status"]
+          task_id?: string | null
+          time_in?: string | null
+          time_out?: string | null
+          total_hours?: number | null
+          updated_at?: string
+          work_date: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          break_in?: string | null
+          break_out?: string | null
+          created_at?: string
+          created_by?: string
+          employee_id?: string
+          id?: string
+          notes?: string | null
+          overtime_hours?: number
+          project_id?: string | null
+          status?: Database["public"]["Enums"]["dtr_status"]
+          task_id?: string | null
+          time_in?: string | null
+          time_out?: string | null
+          total_hours?: number | null
+          updated_at?: string
+          work_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_time_records_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_time_records_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_time_records_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employees: {
+        Row: {
+          created_at: string
+          created_by: string
+          email: string | null
+          full_name: string
+          hourly_rate: number | null
+          id: string
+          is_active: boolean
+          notes: string | null
+          phone: string | null
+          position: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          email?: string | null
+          full_name: string
+          hourly_rate?: number | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          phone?: string | null
+          position?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          email?: string | null
+          full_name?: string
+          hourly_rate?: number | null
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          phone?: string | null
+          position?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       material_requests: {
         Row: {
           approved_at: string | null
@@ -426,6 +594,48 @@ export type Database = {
         }
         Relationships: []
       }
+      project_employees: {
+        Row: {
+          assigned_at: string
+          assigned_by: string
+          employee_id: string
+          id: string
+          project_id: string
+          role: string | null
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by: string
+          employee_id: string
+          id?: string
+          project_id: string
+          role?: string | null
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string
+          employee_id?: string
+          id?: string
+          project_id?: string
+          role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_employees_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_employees_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           color: string | null
@@ -542,6 +752,7 @@ export type Database = {
           icon: string | null
           id: string
           name: string
+          parent_id: string | null
           updated_at: string
         }
         Insert: {
@@ -552,6 +763,7 @@ export type Database = {
           icon?: string | null
           id?: string
           name: string
+          parent_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -562,9 +774,18 @@ export type Database = {
           icon?: string | null
           id?: string
           name?: string
+          parent_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "report_folders_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "report_folders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reports: {
         Row: {
@@ -639,9 +860,11 @@ export type Database = {
       tasks: {
         Row: {
           assignee_id: string | null
+          color: string | null
           created_at: string
           description: string | null
           due_date: string | null
+          employee_id: string | null
           id: string
           labels: string[] | null
           parent_task_id: string | null
@@ -656,9 +879,11 @@ export type Database = {
         }
         Insert: {
           assignee_id?: string | null
+          color?: string | null
           created_at?: string
           description?: string | null
           due_date?: string | null
+          employee_id?: string | null
           id?: string
           labels?: string[] | null
           parent_task_id?: string | null
@@ -673,9 +898,11 @@ export type Database = {
         }
         Update: {
           assignee_id?: string | null
+          color?: string | null
           created_at?: string
           description?: string | null
           due_date?: string | null
+          employee_id?: string | null
           id?: string
           labels?: string[] | null
           parent_task_id?: string | null
@@ -689,6 +916,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "tasks_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tasks_parent_task_id_fkey"
             columns: ["parent_task_id"]
@@ -747,6 +981,7 @@ export type Database = {
       app_role: "admin" | "user"
       chat_channel_type: "project" | "direct"
       comment_target_type: "folder" | "file"
+      dtr_status: "pending" | "approved" | "rejected"
       material_request_status:
         | "requested"
         | "approved"
@@ -754,7 +989,13 @@ export type Database = {
         | "received"
         | "declined"
       task_priority: "low" | "medium" | "high" | "urgent"
-      task_status: "todo" | "in_progress" | "in_review" | "done"
+      task_status:
+        | "todo"
+        | "in_progress"
+        | "in_review"
+        | "done"
+        | "provision"
+        | "removed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -885,6 +1126,7 @@ export const Constants = {
       app_role: ["admin", "user"],
       chat_channel_type: ["project", "direct"],
       comment_target_type: ["folder", "file"],
+      dtr_status: ["pending", "approved", "rejected"],
       material_request_status: [
         "requested",
         "approved",
@@ -893,7 +1135,14 @@ export const Constants = {
         "declined",
       ],
       task_priority: ["low", "medium", "high", "urgent"],
-      task_status: ["todo", "in_progress", "in_review", "done"],
+      task_status: [
+        "todo",
+        "in_progress",
+        "in_review",
+        "done",
+        "provision",
+        "removed",
+      ],
     },
   },
 } as const

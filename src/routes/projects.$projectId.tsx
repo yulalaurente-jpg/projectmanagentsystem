@@ -14,6 +14,9 @@ import { KanbanBoard } from "@/components/views/KanbanBoard";
 import { GanttChart } from "@/components/views/GanttChart";
 import { ChecklistPanel } from "@/components/ChecklistPanel";
 import { MaterialsPanel } from "@/components/MaterialsPanel";
+import { ManpowerPanel } from "@/components/ManpowerPanel";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import type { Tables, Enums } from "@/integrations/supabase/types";
 
 export const Route = createFileRoute("/projects/$projectId")({
@@ -55,6 +58,7 @@ function ProjectDetail() {
   const [createParent, setCreateParent] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"list" | "kanban" | "gantt">("list");
+  const [sortBy, setSortBy] = useState<"position" | "title" | "status" | "priority" | "due_date" | "created_at">("position");
 
   const load = async () => {
     setLoading(true);
@@ -75,12 +79,42 @@ function ProjectDetail() {
 
   const parentTasks = useMemo(() => {
     const filtered = tasks.filter((t) => !t.parent_task_id);
-    if (!search) return filtered;
+    const sorted = [...filtered].sort(sortFn(sortBy));
+    if (!search) return sorted;
     const s = search.toLowerCase();
-    return filtered.filter((t) => t.title.toLowerCase().includes(s));
-  }, [tasks, search]);
+    return sorted.filter((t) => t.title.toLowerCase().includes(s));
+  }, [tasks, search, sortBy]);
 
-  const subtasksOf = (id: string) => tasks.filter((t) => t.parent_task_id === id);
+  const subtasksOf = (id: string) =>
+    tasks.filter((t) => t.parent_task_id === id).sort(sortFn(sortBy));
+
+  const reorder = async (sourceId: string, targetId: string) => {
+    const src = tasks.find((t) => t.id === sourceId);
+    const tgt = tasks.find((t) => t.id === targetId);
+    if (!src || !tgt || src.id === tgt.id) return;
+    // Move src to be sibling of tgt (same parent), placed at tgt's position.
+    const newParent = tgt.parent_task_id;
+    const siblings = tasks
+      .filter((t) => t.parent_task_id === newParent && t.id !== src.id)
+      .sort((a, b) => a.position - b.position);
+    const insertIdx = siblings.findIndex((t) => t.id === tgt.id);
+    siblings.splice(Math.max(0, insertIdx), 0, { ...src, parent_task_id: newParent });
+    setSortBy("position");
+    // Optimistic update
+    setTasks((prev) =>
+      prev.map((t) => {
+        const idx = siblings.findIndex((s) => s.id === t.id);
+        if (idx === -1) return t;
+        return { ...t, position: idx, parent_task_id: newParent };
+      }),
+    );
+    // Persist new positions and parent
+    await Promise.all(
+      siblings.map((s, idx) =>
+        supabase.from("tasks").update({ position: idx, parent_task_id: newParent }).eq("id", s.id),
+      ),
+    );
+  };
 
   const updateTask = async (id: string, patch: Partial<Task>) => {
     const { error } = await supabase.from("tasks").update(patch).eq("id", id);
@@ -165,6 +199,19 @@ function ProjectDetail() {
                 </button>
               ))}
             </div>
+            {view === "list" && (
+              <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
+                <SelectTrigger className="h-8 w-[140px] text-xs"><SelectValue placeholder="Sort" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="position">Manual order</SelectItem>
+                  <SelectItem value="title">Title</SelectItem>
+                  <SelectItem value="status">Status</SelectItem>
+                  <SelectItem value="priority">Priority</SelectItem>
+                  <SelectItem value="due_date">Due date</SelectItem>
+                  <SelectItem value="created_at">Created</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
             <div className="relative">
               <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search tasks…" className="h-8 w-48 pl-8 text-sm" />
@@ -179,7 +226,9 @@ function ProjectDetail() {
       <div className="flex-1 overflow-auto">
         {view === "list" && (
           <>
-            <div className="border-b border-border bg-muted/30 px-6 py-2 grid grid-cols-[24px_60px_1fr_120px_100px_120px_120px_60px] gap-3 text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+            <div className="border-b border-border bg-muted/30 px-4 py-1.5 grid grid-cols-[8px_18px_18px_56px_1fr_110px_92px_140px_100px_44px] gap-2 text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+              <div></div>
+              <div></div>
               <div></div>
               <div>Key</div>
               <div>Title</div>
@@ -201,12 +250,13 @@ function ProjectDetail() {
                     task={t}
                     projectKey={project.key}
                     index={idx + 1}
-                    subtasks={subtasksOf(t.id)}
+                    subtasksOf={subtasksOf}
                     profiles={profiles}
                     onOpen={(id) => setOpenTaskId(id)}
                     onUpdate={updateTask}
                     onDelete={deleteTask}
                     onAddSubtask={(parentId) => { setCreateParent(parentId); setCreateOpen(true); }}
+                    onReorder={reorder}
                   />
                 ))}
               </div>
@@ -227,15 +277,23 @@ function ProjectDetail() {
         )}
       </div>
 
-      <div className="border-t border-border bg-card px-6 py-4 space-y-4">
-        <ChecklistPanel scope="project" scopeId={projectId} profiles={profiles} />
-      </div>
-
-      <div className="border-t border-border bg-card px-6 py-4 space-y-4">
-        <MaterialsPanel
-          projectId={projectId}
-          canApprove={user?.id === project.created_by}
-        />
+      <div className="border-t border-border bg-card px-6 py-4">
+        <Tabs defaultValue="checklist">
+          <TabsList>
+            <TabsTrigger value="checklist">Checklists</TabsTrigger>
+            <TabsTrigger value="materials">Materials</TabsTrigger>
+            <TabsTrigger value="manpower">Manpower</TabsTrigger>
+          </TabsList>
+          <TabsContent value="checklist" className="pt-3">
+            <ChecklistPanel scope="project" scopeId={projectId} profiles={profiles} />
+          </TabsContent>
+          <TabsContent value="materials" className="pt-3">
+            <MaterialsPanel projectId={projectId} canApprove={user?.id === project.created_by} />
+          </TabsContent>
+          <TabsContent value="manpower" className="pt-3">
+            <ManpowerPanel projectId={projectId} canManage={user?.id === project.created_by} tasks={tasks} />
+          </TabsContent>
+        </Tabs>
       </div>
 
       <CreateTaskDialog
@@ -257,4 +315,22 @@ function ProjectDetail() {
       />
     </>
   );
+}
+
+function sortFn(field: "position" | "title" | "status" | "priority" | "due_date" | "created_at") {
+  const PRIORITY_ORDER: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
+  const STATUS_ORDER: Record<string, number> = { in_progress: 0, in_review: 1, todo: 2, provision: 3, done: 4, removed: 5 };
+  return (a: Task, b: Task) => {
+    if (field === "title") return a.title.localeCompare(b.title);
+    if (field === "priority") return (PRIORITY_ORDER[a.priority] ?? 9) - (PRIORITY_ORDER[b.priority] ?? 9);
+    if (field === "status") return (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9);
+    if (field === "due_date") {
+      if (!a.due_date && !b.due_date) return 0;
+      if (!a.due_date) return 1;
+      if (!b.due_date) return -1;
+      return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
+    }
+    if (field === "created_at") return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    return a.position - b.position;
+  };
 }
