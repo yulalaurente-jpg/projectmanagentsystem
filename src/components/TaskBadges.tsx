@@ -1,12 +1,14 @@
 import type { Enums, Tables } from "@/integrations/supabase/types";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { CircleDashed, CircleDot, Eye, CheckCircle2, ArrowDown, Minus, ArrowUp, Flame } from "lucide-react";
+import { CircleDashed, CircleDot, Eye, CheckCircle2, ArrowDown, Minus, ArrowUp, Flame, Sparkles, Ban } from "lucide-react";
 
 const STATUS_CONFIG: Record<Enums<"task_status">, { label: string; color: string; icon: React.ComponentType<{ className?: string }> }> = {
   todo: { label: "To Do", color: "var(--status-todo)", icon: CircleDashed },
   in_progress: { label: "In Progress", color: "var(--status-progress)", icon: CircleDot },
   in_review: { label: "In Review", color: "var(--status-review)", icon: Eye },
   done: { label: "Done", color: "var(--status-done)", icon: CheckCircle2 },
+  provision: { label: "Provision", color: "var(--status-provision)", icon: Sparkles },
+  removed: { label: "Removed", color: "var(--status-removed)", icon: Ban },
 };
 
 const PRIORITY_CONFIG: Record<Enums<"task_priority">, { label: string; color: string; icon: React.ComponentType<{ className?: string }> }> = {
