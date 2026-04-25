@@ -42,7 +42,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   return (
     <div
         className="min-h-screen bg-background text-foreground grid"
-        style={{ gridTemplateColumns: `220px 1fr` }}
+        style={{ gridTemplateColumns: `${collapsed ? 0 : 220}px 1fr` }}
       >
         {/* Hover edge to reveal sidebar when hidden */}
         {collapsed && (
