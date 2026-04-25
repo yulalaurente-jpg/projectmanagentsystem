@@ -41,8 +41,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <div
-        className="min-h-screen bg-background text-foreground transition-[grid-template-columns] duration-300 ease-out grid"
-        style={{ gridTemplateColumns: `${collapsed ? 0 : 220}px 1fr` }}
+        className="min-h-screen bg-background text-foreground grid"
+        style={{ gridTemplateColumns: `220px 1fr` }}
       >
         {/* Hover edge to reveal sidebar when hidden */}
         {collapsed && (
@@ -54,12 +54,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <aside
           onMouseEnter={() => collapsed && setHovered(true)}
           onMouseLeave={() => setHovered(false)}
-          className={`bg-sidebar-bg text-sidebar-fg flex flex-col border-r border-sidebar-border transition-transform duration-300 ease-out z-30 ${
-            collapsed ? "fixed top-0 left-0 bottom-0 shadow-2xl" : "relative"
-          }`}
+          className="bg-sidebar-bg text-sidebar-fg flex flex-col border-r border-sidebar-border transition-transform duration-300 ease-out z-30 fixed top-0 left-0 bottom-0 shadow-2xl"
           style={{
             width: 220,
             transform: collapsed && !hovered ? "translateX(-100%)" : "translateX(0)",
+            boxShadow: collapsed && hovered ? undefined : (collapsed ? "none" : "none"),
           }}
         >
           <div className="flex items-center gap-2 px-3 h-14 border-b border-sidebar-border overflow-hidden">
