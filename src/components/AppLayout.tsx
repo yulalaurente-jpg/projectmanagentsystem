@@ -4,7 +4,6 @@ import { KanbanSquare, FolderKanban, Shield, LogOut, User as UserIcon, BarChart3
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useEffect, useState, type ReactNode } from "react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, isAdmin, signOut } = useAuth();
@@ -22,9 +21,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
       window.localStorage.setItem("trackr.sidebar.collapsed", collapsed ? "1" : "0");
     }
   }, [collapsed]);
-
-  // Expand visually when hovered, even when collapsed
-  const expanded = !collapsed || hovered;
 
   const handleSignOut = async () => {
     await signOut();
@@ -44,8 +40,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   ];
 
   return (
-    <TooltipProvider delayDuration={200}>
-      <div
+    <div
         className="min-h-screen bg-background text-foreground transition-[grid-template-columns] duration-300 ease-out grid"
         style={{ gridTemplateColumns: `${collapsed ? 0 : 220}px 1fr` }}
       >
@@ -112,8 +107,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </div>
         </aside>
         <main className="min-w-0 flex flex-col">{children}</main>
-      </div>
-    </TooltipProvider>
+    </div>
   );
 }
 
