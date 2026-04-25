@@ -47,21 +47,31 @@ export function AppLayout({ children }: { children: ReactNode }) {
     <TooltipProvider delayDuration={200}>
       <div
         className="min-h-screen bg-background text-foreground transition-[grid-template-columns] duration-300 ease-out grid"
-        style={{ gridTemplateColumns: `${collapsed ? 56 : 220}px 1fr` }}
+        style={{ gridTemplateColumns: `${collapsed ? 0 : 220}px 1fr` }}
       >
+        {/* Hover edge to reveal sidebar when hidden */}
+        {collapsed && (
+          <div
+            onMouseEnter={() => setHovered(true)}
+            className="fixed top-0 left-0 bottom-0 w-2 z-20"
+          />
+        )}
         <aside
           onMouseEnter={() => collapsed && setHovered(true)}
           onMouseLeave={() => setHovered(false)}
-          className={`bg-sidebar-bg text-sidebar-fg flex flex-col border-r border-sidebar-border transition-all duration-300 ease-out z-30 ${
-            collapsed ? "fixed top-0 left-0 bottom-0" : "relative"
+          className={`bg-sidebar-bg text-sidebar-fg flex flex-col border-r border-sidebar-border transition-transform duration-300 ease-out z-30 ${
+            collapsed ? "fixed top-0 left-0 bottom-0 shadow-2xl" : "relative"
           }`}
-          style={{ width: expanded ? 220 : 56 }}
+          style={{
+            width: 220,
+            transform: collapsed && !hovered ? "translateX(-100%)" : "translateX(0)",
+          }}
         >
           <div className="flex items-center gap-2 px-3 h-14 border-b border-sidebar-border overflow-hidden">
             <div className="w-7 h-7 rounded bg-primary flex items-center justify-center shrink-0">
               <KanbanSquare className="w-4 h-4 text-primary-foreground" />
             </div>
-            {expanded && <span className="font-semibold tracking-tight whitespace-nowrap">Trackr</span>}
+            <span className="font-semibold tracking-tight whitespace-nowrap">Trackr</span>
             <button
               onClick={() => { setCollapsed((c) => !c); setHovered(false); }}
               className="ml-auto text-sidebar-muted hover:text-sidebar-fg p-1 rounded hover:bg-sidebar-accent/60 shrink-0"
@@ -74,7 +84,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             {navItems.map((item) => {
               const active = location.pathname.startsWith(item.to);
               const Icon = item.icon;
-              const link = (
+              return (
                 <Link
                   key={item.to}
                   to={item.to}
@@ -83,16 +93,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   }`}
                 >
                   <Icon className="w-4 h-4 shrink-0" />
-                  {expanded && <span className="whitespace-nowrap">{item.label}</span>}
+                  <span className="whitespace-nowrap">{item.label}</span>
                 </Link>
-              );
-              return collapsed && !hovered ? (
-                <Tooltip key={item.to}>
-                  <TooltipTrigger asChild>{link}</TooltipTrigger>
-                  <TooltipContent side="right">{item.label}</TooltipContent>
-                </Tooltip>
-              ) : (
-                link
               );
             })}
           </nav>
@@ -100,17 +102,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <Avatar className="w-8 h-8 shrink-0">
               <AvatarFallback className="bg-primary text-primary-foreground text-xs">{initials}</AvatarFallback>
             </Avatar>
-            {expanded && (
-              <>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-medium truncate">{user?.email}</div>
-                  <div className="text-[10px] uppercase tracking-wider text-sidebar-muted">{isAdmin ? "Admin" : "User"}</div>
-                </div>
-                <Button size="icon" variant="ghost" onClick={handleSignOut} className="h-8 w-8 text-sidebar-muted hover:text-sidebar-fg hover:bg-sidebar-accent shrink-0">
-                  <LogOut className="w-4 h-4" />
-                </Button>
-              </>
-            )}
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-medium truncate">{user?.email}</div>
+              <div className="text-[10px] uppercase tracking-wider text-sidebar-muted">{isAdmin ? "Admin" : "User"}</div>
+            </div>
+            <Button size="icon" variant="ghost" onClick={handleSignOut} className="h-8 w-8 text-sidebar-muted hover:text-sidebar-fg hover:bg-sidebar-accent shrink-0">
+              <LogOut className="w-4 h-4" />
+            </Button>
           </div>
         </aside>
         <main className="min-w-0 flex flex-col">{children}</main>
