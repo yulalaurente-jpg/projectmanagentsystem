@@ -53,7 +53,7 @@ export function TaskRow({
   onReorder?: (sourceId: string, targetId: string) => void;
   depth?: number;
 }) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const children = subtasksOf(task.id);
   const hasSubs = children.length > 0;
   const assignee = profiles.find((p) => p.id === task.assignee_id);
