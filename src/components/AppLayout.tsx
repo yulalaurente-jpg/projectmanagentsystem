@@ -3,24 +3,13 @@ import { useAuth } from "@/context/AuthContext";
 import { KanbanSquare, FolderKanban, Shield, LogOut, User as UserIcon, BarChart3, FileText, ListChecks, Package, MessageSquare, Users, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useEffect, useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
   const { location } = useRouterState();
   const initials = (user?.email ?? "?").slice(0, 2).toUpperCase();
-  const [collapsed, setCollapsed] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return window.localStorage.getItem("trackr.sidebar.collapsed") === "1";
-  });
-  const [hovered, setHovered] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem("trackr.sidebar.collapsed", collapsed ? "1" : "0");
-    }
-  }, [collapsed]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -41,40 +30,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <div
-        className="min-h-screen bg-background text-foreground grid"
-        style={{ gridTemplateColumns: `${collapsed ? 0 : 220}px 1fr` }}
+        className="min-h-screen bg-background text-foreground grid grid-cols-[220px_1fr]"
       >
-        {/* Hover edge to reveal sidebar when hidden */}
-        {collapsed && (
-          <div
-            onMouseEnter={() => setHovered(true)}
-            className="fixed top-0 left-0 bottom-0 w-2 z-20"
-          />
-        )}
-        <aside
-          onMouseEnter={() => collapsed && setHovered(true)}
-          onMouseLeave={() => setHovered(false)}
-          className="bg-sidebar-bg text-sidebar-fg flex flex-col border-r border-sidebar-border transition-transform duration-300 ease-out z-30 fixed top-0 left-0 bottom-0 shadow-2xl"
-          style={{
-            width: 220,
-            transform: collapsed && !hovered ? "translateX(-100%)" : "translateX(0)",
-            boxShadow: collapsed && hovered ? undefined : (collapsed ? "none" : "none"),
-          }}
-        >
-          <div className="flex items-center gap-2 px-3 h-14 border-b border-sidebar-border overflow-hidden">
+        <aside className="bg-sidebar-bg text-sidebar-fg flex flex-col border-r border-sidebar-border">
+          <div className="flex items-center gap-2 px-4 h-14 border-b border-sidebar-border">
             <div className="w-7 h-7 rounded bg-primary flex items-center justify-center shrink-0">
               <KanbanSquare className="w-4 h-4 text-primary-foreground" />
             </div>
-            <span className="font-semibold tracking-tight whitespace-nowrap">Trackr</span>
-            <button
-              onClick={() => { setCollapsed((c) => !c); setHovered(false); }}
-              className="ml-auto text-sidebar-muted hover:text-sidebar-fg p-1 rounded hover:bg-sidebar-accent/60 shrink-0"
-              title={collapsed ? "Pin sidebar open" : "Auto-hide sidebar"}
-            >
-              <span className={`block w-1 h-4 rounded-full bg-current transition-transform ${collapsed ? "" : "rotate-180"}`} />
-            </button>
+            <span className="font-semibold tracking-tight">Trackr</span>
           </div>
-          <nav className="flex-1 p-2 space-y-0.5 overflow-hidden">
+          <nav className="flex-1 p-2 space-y-0.5">
             {navItems.map((item) => {
               const active = location.pathname.startsWith(item.to);
               const Icon = item.icon;
@@ -82,25 +47,25 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 <Link
                   key={item.to}
                   to={item.to}
-                  className={`flex items-center gap-2.5 px-2.5 py-2 text-sm rounded transition-colors ${
+                  className={`flex items-center gap-2.5 px-3 py-2 text-sm rounded transition-colors ${
                     active ? "bg-sidebar-accent text-sidebar-fg" : "text-sidebar-muted hover:bg-sidebar-accent/60 hover:text-sidebar-fg"
                   }`}
                 >
-                  <Icon className="w-4 h-4 shrink-0" />
-                  <span className="whitespace-nowrap">{item.label}</span>
+                  <Icon className="w-4 h-4" />
+                  {item.label}
                 </Link>
               );
             })}
           </nav>
-          <div className="border-t border-sidebar-border p-2 flex items-center gap-2 overflow-hidden">
-            <Avatar className="w-8 h-8 shrink-0">
+          <div className="border-t border-sidebar-border p-3 flex items-center gap-2">
+            <Avatar className="w-8 h-8">
               <AvatarFallback className="bg-primary text-primary-foreground text-xs">{initials}</AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
               <div className="text-xs font-medium truncate">{user?.email}</div>
               <div className="text-[10px] uppercase tracking-wider text-sidebar-muted">{isAdmin ? "Admin" : "User"}</div>
             </div>
-            <Button size="icon" variant="ghost" onClick={handleSignOut} className="h-8 w-8 text-sidebar-muted hover:text-sidebar-fg hover:bg-sidebar-accent shrink-0">
+            <Button size="icon" variant="ghost" onClick={handleSignOut} className="h-8 w-8 text-sidebar-muted hover:text-sidebar-fg hover:bg-sidebar-accent">
               <LogOut className="w-4 h-4" />
             </Button>
           </div>
