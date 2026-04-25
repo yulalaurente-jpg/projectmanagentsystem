@@ -138,38 +138,61 @@ function ProjectsPage() {
             <Button onClick={() => setOpen(true)}><Plus className="w-4 h-4 mr-1.5" /> New project</Button>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {projects.map((p) => (
-              <Card key={p.id} className="group p-0 overflow-hidden hover:shadow-md transition-shadow">
-                <Link to="/projects/$projectId" params={{ projectId: p.id }} className="block p-5">
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-8 h-8 rounded text-xs font-bold text-primary-foreground flex items-center justify-center shrink-0" style={{ backgroundColor: p.color ?? "#3b82f6" }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {projects.map((p) => {
+              const color = p.color ?? "#3b82f6";
+              return (
+                <Card
+                  key={p.id}
+                  className="group relative p-0 overflow-hidden border border-border/60 hover:border-transparent hover:-translate-y-0.5 hover:shadow-xl transition-all duration-200"
+                  style={{ ["--proj" as string]: color }}
+                >
+                  {/* Top color stripe */}
+                  <div className="h-1.5 w-full" style={{ background: `linear-gradient(90deg, ${color}, ${color}99)` }} />
+                  {/* Soft tinted background */}
+                  <div
+                    className="absolute inset-0 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{ background: `radial-gradient(circle at top right, ${color}1f, transparent 60%)` }}
+                  />
+                  <Link to="/projects/$projectId" params={{ projectId: p.id }} className="relative block p-5">
+                    <div className="flex items-start gap-3 mb-4">
+                      <div
+                        className="w-12 h-12 rounded-lg text-sm font-bold text-white flex items-center justify-center shrink-0 shadow-md ring-1 ring-black/5"
+                        style={{ background: `linear-gradient(135deg, ${color}, ${color}cc)` }}
+                      >
                         {p.key.slice(0, 2)}
                       </div>
-                      <div className="min-w-0">
-                        <div className="font-semibold truncate">{p.name}</div>
-                        <div className="text-[11px] uppercase tracking-wider text-muted-foreground font-mono">{p.key}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-semibold truncate text-[15px] leading-tight">{p.name}</div>
+                        <div
+                          className="inline-block mt-1 text-[10px] uppercase tracking-wider font-mono px-1.5 py-0.5 rounded"
+                          style={{ background: `${color}1a`, color: color }}
+                        >
+                          {p.key}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <p className="text-sm text-muted-foreground line-clamp-2 mb-4 min-h-[2.5rem]">
-                    {p.description || "No description"}
-                  </p>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{taskCounts[p.id] ?? 0} tasks</span>
-                    <span>Created {new Date(p.created_at).toLocaleDateString()}</span>
-                  </div>
-                </Link>
-                {(isAdmin || user?.id === p.created_by) && (
-                  <div className="px-5 pb-3 flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button size="sm" variant="ghost" onClick={() => del(p.id)} className="h-7 text-destructive hover:text-destructive">
-                      <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete
-                    </Button>
-                  </div>
-                )}
-              </Card>
-            ))}
+                    <p className="text-sm text-muted-foreground line-clamp-2 mb-4 min-h-[2.5rem]">
+                      {p.description || "No description"}
+                    </p>
+                    <div className="flex items-center justify-between pt-3 border-t border-border/60 text-xs text-muted-foreground">
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
+                        <span className="font-medium text-foreground">{taskCounts[p.id] ?? 0}</span> tasks
+                      </span>
+                      <span>{new Date(p.created_at).toLocaleDateString()}</span>
+                    </div>
+                  </Link>
+                  {(isAdmin || user?.id === p.created_by) && (
+                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button size="icon" variant="ghost" onClick={() => del(p.id)} className="h-7 w-7 bg-background/80 backdrop-blur text-destructive hover:text-destructive">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>
