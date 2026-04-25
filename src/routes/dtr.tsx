@@ -12,7 +12,7 @@ import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Clock, Trash2, CheckCircle2, XCircle } from "lucide-react";
+import { Plus, ClipboardList, Trash2, CheckCircle2, XCircle, ArrowLeft, Search, Briefcase } from "lucide-react";
 import { toast } from "sonner";
 
 type DTR = Tables<"daily_time_records">;
@@ -22,7 +22,7 @@ type Task = Tables<"tasks">;
 type DStatus = Enums<"dtr_status">;
 
 export const Route = createFileRoute("/dtr")({
-  head: () => ({ meta: [{ title: "Daily Time Records — Trackr" }, { name: "description", content: "Time-in/out, breaks, overtime and approval per employee." }] }),
+  head: () => ({ meta: [{ title: "Daily Job Records — Trackr" }, { name: "description", content: "Per-person daily job log: time-in/out, breaks, overtime, projects, tasks and approval." }] }),
   component: () => (<RequireAuth><AppLayout><DTRPage /></AppLayout></RequireAuth>),
 });
 
@@ -39,9 +39,10 @@ function DTRPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [open, setOpen] = useState(false);
-  const [filterEmp, setFilterEmp] = useState<string>("all");
   const [filterProj, setFilterProj] = useState<string>("all");
   const [loading, setLoading] = useState(true);
+  const [selectedEmp, setSelectedEmp] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -56,14 +57,41 @@ function DTRPage() {
   };
   useEffect(() => { load(); }, []);
 
-  const empName = (id: string) => employees.find((e) => e.id === id)?.full_name ?? "—";
   const projName = (id: string | null) => id ? projects.find((p) => p.id === id)?.name ?? "—" : "—";
+  const taskName = (id: string | null) => id ? tasks.find((t) => t.id === id)?.title ?? "—" : "—";
+  const selectedEmployee = employees.find((e) => e.id === selectedEmp) ?? null;
 
-  const filtered = useMemo(() =>
+  const empStats = useMemo(() => {
+    const map = new Map<string, { count: number; hours: number; lastDate: string | null; pending: number }>();
+    for (const r of records) {
+      const m = map.get(r.employee_id) ?? { count: 0, hours: 0, lastDate: null, pending: 0 };
+      m.count += 1;
+      m.hours += Number(r.total_hours ?? 0);
+      if (!m.lastDate || r.work_date > m.lastDate) m.lastDate = r.work_date;
+      if (r.status === "pending") m.pending += 1;
+      map.set(r.employee_id, m);
+    }
+    return map;
+  }, [records]);
+
+  const filteredEmployees = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return employees.filter((e) => !q || e.full_name.toLowerCase().includes(q) || (e.position ?? "").toLowerCase().includes(q));
+  }, [employees, search]);
+
+  const personRecords = useMemo(() =>
     records.filter((r) =>
-      (filterEmp === "all" || r.employee_id === filterEmp) &&
+      r.employee_id === selectedEmp &&
       (filterProj === "all" || r.project_id === filterProj),
-    ), [records, filterEmp, filterProj]);
+    ), [records, selectedEmp, filterProj]);
+
+  const personSummary = useMemo(() => {
+    const totalHrs = personRecords.reduce((s, r) => s + Number(r.total_hours ?? 0), 0);
+    const totalOt = personRecords.reduce((s, r) => s + Number(r.overtime_hours ?? 0), 0);
+    const approved = personRecords.filter((r) => r.status === "approved").length;
+    const pending = personRecords.filter((r) => r.status === "pending").length;
+    return { totalHrs, totalOt, approved, pending, count: personRecords.length };
+  }, [personRecords]);
 
   const create = async (input: Partial<DTR> & { employee_id: string; work_date: string }) => {
     if (!user) return;
@@ -76,7 +104,7 @@ function DTRPage() {
     if (error) { toast.error(error.message); return; }
     if (data) setRecords((rs) => [data, ...rs]);
     setOpen(false);
-    toast.success("Time record added");
+    toast.success("Job record added");
   };
 
   const setStatus = async (id: string, status: DStatus) => {
@@ -88,27 +116,96 @@ function DTRPage() {
   };
 
   const del = async (id: string) => {
-    if (!confirm("Delete this DTR entry?")) return;
+    if (!confirm("Delete this job record?")) return;
     const { error } = await supabase.from("daily_time_records").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
     setRecords((rs) => rs.filter((r) => r.id !== id));
   };
 
+  // ── PERSON LIST VIEW ──
+  if (!selectedEmp) {
+    return (
+      <>
+        <header className="h-14 border-b border-border px-6 flex items-center justify-between bg-card">
+          <div className="flex items-center gap-2">
+            <ClipboardList className="w-4 h-4" />
+            <h1 className="text-base font-semibold tracking-tight">Daily Job Records</h1>
+            <span className="text-xs text-muted-foreground ml-2">— pick a person to open their log</span>
+          </div>
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input placeholder="Search person…" value={search} onChange={(e) => setSearch(e.target.value)} className="h-8 pl-8 w-[240px] text-xs" />
+          </div>
+        </header>
+        <div className="p-6">
+          {loading ? (
+            <div className="text-sm text-muted-foreground">Loading…</div>
+          ) : employees.length === 0 ? (
+            <Card className="p-12 text-center">
+              <ClipboardList className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
+              <h2 className="text-base font-semibold">No employees yet</h2>
+              <p className="text-sm text-muted-foreground">Add employees first to start logging daily jobs.</p>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredEmployees.map((emp) => {
+                const s = empStats.get(emp.id) ?? { count: 0, hours: 0, lastDate: null, pending: 0 };
+                const initials = emp.full_name.split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+                return (
+                  <Card key={emp.id} onClick={() => setSelectedEmp(emp.id)} className="group p-5 cursor-pointer hover:border-primary/60 hover:-translate-y-0.5 hover:shadow-lg transition-all">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary to-primary/70 text-primary-foreground font-semibold flex items-center justify-center text-sm shrink-0">{initials || "?"}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-semibold truncate">{emp.full_name}</div>
+                        <div className="text-xs text-muted-foreground truncate">{emp.position ?? "—"}</div>
+                      </div>
+                      {s.pending > 0 && (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600">{s.pending} pending</span>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 pt-3 border-t border-border/60 text-center">
+                      <div>
+                        <div className="text-base font-semibold tabular-nums">{s.count}</div>
+                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Logs</div>
+                      </div>
+                      <div>
+                        <div className="text-base font-semibold tabular-nums">{s.hours.toFixed(1)}</div>
+                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Hours</div>
+                      </div>
+                      <div>
+                        <div className="text-[11px] font-medium tabular-nums">{s.lastDate ?? "—"}</div>
+                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Last</div>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+              {filteredEmployees.length === 0 && (
+                <div className="col-span-full text-center text-sm text-muted-foreground py-12">No employees match "{search}".</div>
+              )}
+            </div>
+          )}
+        </div>
+      </>
+    );
+  }
+
+  // ── PERSON DETAIL VIEW ──
   return (
     <>
       <header className="h-14 border-b border-border px-6 flex items-center justify-between bg-card">
-        <div className="flex items-center gap-2">
-          <Clock className="w-4 h-4" />
-          <h1 className="text-base font-semibold tracking-tight">Daily Time Records</h1>
+        <div className="flex items-center gap-2 min-w-0">
+          <Button size="sm" variant="ghost" onClick={() => setSelectedEmp(null)} className="h-8 -ml-2">
+            <ArrowLeft className="w-4 h-4 mr-1" /> All people
+          </Button>
+          <span className="text-muted-foreground/40">/</span>
+          <ClipboardList className="w-4 h-4 text-muted-foreground" />
+          <h1 className="text-base font-semibold tracking-tight truncate">{selectedEmployee?.full_name}</h1>
+          {selectedEmployee?.position && (
+            <span className="text-xs text-muted-foreground truncate">— {selectedEmployee.position}</span>
+          )}
         </div>
         <div className="flex items-center gap-2">
-          <Select value={filterEmp} onValueChange={setFilterEmp}>
-            <SelectTrigger className="h-8 w-[180px] text-xs"><SelectValue placeholder="Employee" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All employees</SelectItem>
-              {employees.map((e) => <SelectItem key={e.id} value={e.id}>{e.full_name}</SelectItem>)}
-            </SelectContent>
-          </Select>
           <Select value={filterProj} onValueChange={setFilterProj}>
             <SelectTrigger className="h-8 w-[180px] text-xs"><SelectValue placeholder="Project" /></SelectTrigger>
             <SelectContent>
@@ -116,24 +213,33 @@ function DTRPage() {
               {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Button size="sm" onClick={() => setOpen(true)} disabled={employees.length === 0}>
-            <Plus className="w-4 h-4 mr-1.5" /> New entry
+          <Button size="sm" onClick={() => setOpen(true)}>
+            <Plus className="w-4 h-4 mr-1.5" /> New job entry
           </Button>
         </div>
       </header>
-      <div className="p-6">
+      <div className="p-6 space-y-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <SummaryStat label="Total entries" value={String(personSummary.count)} />
+          <SummaryStat label="Total hours" value={personSummary.totalHrs.toFixed(1)} />
+          <SummaryStat label="Overtime" value={personSummary.totalOt.toFixed(1)} />
+          <SummaryStat label="Pending approval" value={String(personSummary.pending)} accent={personSummary.pending > 0 ? "#f59e0b" : undefined} />
+        </div>
         <Card>
           {loading ? (
             <div className="p-8 text-sm text-muted-foreground text-center">Loading…</div>
-          ) : filtered.length === 0 ? (
-            <div className="p-12 text-center text-sm text-muted-foreground">No time records yet.</div>
+          ) : personRecords.length === 0 ? (
+            <div className="p-12 text-center text-sm text-muted-foreground">
+              <Briefcase className="w-8 h-8 mx-auto mb-2 opacity-40" />
+              No job records for {selectedEmployee?.full_name} yet.
+            </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Date</TableHead>
-                  <TableHead>Employee</TableHead>
                   <TableHead>Project</TableHead>
+                  <TableHead>Task</TableHead>
                   <TableHead>In</TableHead>
                   <TableHead>Break</TableHead>
                   <TableHead>Out</TableHead>
@@ -144,22 +250,20 @@ function DTRPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((r) => {
+                {personRecords.map((r) => {
                   const m = STATUS_META[r.status];
                   return (
                     <TableRow key={r.id}>
                       <TableCell className="text-xs">{r.work_date}</TableCell>
-                      <TableCell className="font-medium text-sm">{empName(r.employee_id)}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{projName(r.project_id)}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{taskName(r.task_id)}</TableCell>
                       <TableCell className="text-xs">{fmtTime(r.time_in)}</TableCell>
                       <TableCell className="text-xs">{fmtTime(r.break_out)}–{fmtTime(r.break_in)}</TableCell>
                       <TableCell className="text-xs">{fmtTime(r.time_out)}</TableCell>
                       <TableCell className="text-right tabular-nums text-sm">{r.total_hours ?? "—"}</TableCell>
                       <TableCell className="text-right tabular-nums text-sm">{Number(r.overtime_hours)}</TableCell>
                       <TableCell>
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium" style={{ background: `${m.color}1f`, color: m.color }}>
-                          {m.label}
-                        </span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium" style={{ background: `${m.color}1f`, color: m.color }}>{m.label}</span>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-0.5">
@@ -183,8 +287,17 @@ function DTRPage() {
         </Card>
       </div>
 
-      <DTRDialog open={open} onOpenChange={setOpen} employees={employees} projects={projects} tasks={tasks} onSave={create} />
+      <DTRDialog open={open} onOpenChange={setOpen} employees={employees} lockedEmployeeId={selectedEmp} projects={projects} tasks={tasks} onSave={create} />
     </>
+  );
+}
+
+function SummaryStat({ label, value, accent }: { label: string; value: string; accent?: string }) {
+  return (
+    <Card className="p-4">
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="text-2xl font-semibold tabular-nums mt-0.5" style={accent ? { color: accent } : undefined}>{value}</div>
+    </Card>
   );
 }
 
@@ -205,10 +318,11 @@ function computeHours(input: Partial<DTR>) {
   return Math.round((totalMs / 3600000) * 100) / 100;
 }
 
-function DTRDialog({ open, onOpenChange, employees, projects, tasks, onSave }: {
+function DTRDialog({ open, onOpenChange, employees, lockedEmployeeId, projects, tasks, onSave }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   employees: Employee[];
+  lockedEmployeeId?: string | null;
   projects: Project[];
   tasks: Task[];
   onSave: (input: Partial<DTR> & { employee_id: string; work_date: string }) => Promise<void>;
@@ -227,23 +341,25 @@ function DTRDialog({ open, onOpenChange, employees, projects, tasks, onSave }: {
 
   useEffect(() => {
     if (open) {
-      setEmployeeId(""); setProjectId("none"); setTaskId("none"); setDate(today);
+      setEmployeeId(lockedEmployeeId ?? "");
+      setProjectId("none"); setTaskId("none"); setDate(today);
       setTIn("08:00"); setBOut("12:00"); setBIn("13:00"); setTOut("17:00"); setOt("0"); setNotes("");
     }
-  }, [open]);
+  }, [open, lockedEmployeeId, today]);
 
   const toIso = (t: string) => t ? new Date(`${date}T${t}:00`).toISOString() : null;
   const projTasks = tasks.filter((t) => projectId !== "none" && t.project_id === projectId);
+  const lockedEmployee = employees.find((e) => e.id === lockedEmployeeId);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
-        <DialogHeader><DialogTitle>New time record</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>New job entry{lockedEmployee ? ` — ${lockedEmployee.full_name}` : ""}</DialogTitle></DialogHeader>
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Employee *</Label>
-              <Select value={employeeId} onValueChange={setEmployeeId}>
+              <Select value={employeeId} onValueChange={setEmployeeId} disabled={!!lockedEmployeeId}>
                 <SelectTrigger><SelectValue placeholder="Choose" /></SelectTrigger>
                 <SelectContent>
                   {employees.map((e) => <SelectItem key={e.id} value={e.id}>{e.full_name}</SelectItem>)}
@@ -267,7 +383,7 @@ function DTRDialog({ open, onOpenChange, employees, projects, tasks, onSave }: {
               </Select>
             </div>
             <div>
-              <Label>Task</Label>
+              <Label>Job / Task</Label>
               <Select value={taskId} onValueChange={setTaskId} disabled={projectId === "none"}>
                 <SelectTrigger><SelectValue placeholder="Optional" /></SelectTrigger>
                 <SelectContent>
@@ -287,7 +403,10 @@ function DTRDialog({ open, onOpenChange, employees, projects, tasks, onSave }: {
             <Label>Overtime hours</Label>
             <Input type="number" step="0.25" value={ot} onChange={(e) => setOt(e.target.value)} />
           </div>
-          <div><Label>Notes</Label><Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
+          <div>
+            <Label>Job notes</Label>
+            <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="What was accomplished today?" />
+          </div>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
