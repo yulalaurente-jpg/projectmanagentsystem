@@ -151,22 +151,38 @@ function ProjectDetail() {
     status: Enums<"task_status">;
     priority: Enums<"task_priority">;
     assignee_id: string | null;
+    employee_id: string | null;
+    assignee_ids: string[];
+    employee_ids: string[];
     due_date: string | null;
     start_date: string | null;
     labels: string[];
     parent_task_id: string | null;
   }) => {
     if (!user) return;
+    const { assignee_ids, employee_ids, ...taskInput } = input;
     const { data, error } = await supabase
       .from("tasks")
-      .insert({ ...input, project_id: projectId, reporter_id: user.id })
+      .insert({ ...taskInput, project_id: projectId, reporter_id: user.id })
       .select()
       .single();
     if (error) {
       toast.error(error.message);
       return;
     }
-    if (data) setTasks((prev) => [...prev, data]);
+    if (data) {
+      setTasks((prev) => [...prev, data]);
+      if (assignee_ids.length) {
+        await supabase.from("task_assignees").insert(
+          assignee_ids.map((u) => ({ task_id: data.id, user_id: u, assigned_by: user.id })),
+        );
+      }
+      if (employee_ids.length) {
+        await supabase.from("task_employees").insert(
+          employee_ids.map((e) => ({ task_id: data.id, employee_id: e, assigned_by: user.id })),
+        );
+      }
+    }
     toast.success("Task created");
   };
 
