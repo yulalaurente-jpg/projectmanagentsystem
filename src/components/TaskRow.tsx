@@ -59,6 +59,9 @@ export function TaskRow({
   const assignee = profiles.find((p) => p.id === task.assignee_id);
   const indent = depth * 20;
   const colorBar = task.color || null;
+  const isCompleted = task.status === "done" || task.status === "removed";
+  const isOverdue =
+    !!task.due_date && !isCompleted && new Date(task.due_date) < new Date();
 
   return (
     <>
@@ -111,7 +114,15 @@ export function TaskRow({
           <AssigneeAvatar profile={assignee} />
           <span className="text-[11px] text-muted-foreground truncate">{assignee?.display_name ?? "—"}</span>
         </div>
-        <div className="text-[11px] text-muted-foreground">
+        <div
+          className={`text-[11px] ${
+            isOverdue
+              ? "text-destructive font-medium"
+              : isCompleted && task.due_date
+              ? "text-muted-foreground/60 line-through"
+              : "text-muted-foreground"
+          }`}
+        >
           {task.due_date ? new Date(task.due_date).toLocaleDateString() : "—"}
         </div>
         <div onClick={(e) => e.stopPropagation()} className="flex justify-end">
