@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Tables, Enums } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, ChevronDown, MoreHorizontal, Plus, Trash2, GripVertical } from "lucide-react";
+import { ChevronRight, ChevronDown, MoreHorizontal, Plus, Trash2, GripVertical, AlertTriangle } from "lucide-react";
 import { StatusBadge, PriorityBadge, AssigneeAvatar } from "@/components/TaskBadges";
 import {
   DropdownMenu,
@@ -123,7 +123,14 @@ export function TaskRow({
               : "text-muted-foreground"
           }`}
         >
-          {task.due_date ? new Date(task.due_date).toLocaleDateString() : "—"}
+          {task.due_date ? (
+            <span className="inline-flex items-center gap-1">
+              {isOverdue && <AlertTriangle className="w-3 h-3" />}
+              {new Date(task.due_date).toLocaleDateString()}
+            </span>
+          ) : (
+            "—"
+          )}
         </div>
         <div onClick={(e) => e.stopPropagation()} className="flex justify-end">
           <DropdownMenu>
