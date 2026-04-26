@@ -135,7 +135,11 @@ function OverviewTab({ tasks, profiles, projects }: { tasks: Task[]; profiles: P
     const done = tasks.filter((t) => t.status === "done").length;
     const inProgress = tasks.filter((t) => t.status === "in_progress").length;
     const overdue = tasks.filter(
-      (t) => t.due_date && new Date(t.due_date) < new Date() && t.status !== "done",
+      (t) =>
+        t.due_date &&
+        new Date(t.due_date) < new Date() &&
+        t.status !== "done" &&
+        t.status !== "removed",
     ).length;
     return { total, done, inProgress, overdue };
   }, [tasks]);
@@ -309,7 +313,13 @@ function PerProjectTab({
     total: pTasks.length,
     done: pTasks.filter((t) => t.status === "done").length,
     inProgress: pTasks.filter((t) => t.status === "in_progress").length,
-    overdue: pTasks.filter((t) => t.due_date && new Date(t.due_date) < new Date() && t.status !== "done").length,
+    overdue: pTasks.filter(
+      (t) =>
+        t.due_date &&
+        new Date(t.due_date) < new Date() &&
+        t.status !== "done" &&
+        t.status !== "removed",
+    ).length,
   };
   const completion = stats.total > 0 ? Math.round((stats.done / stats.total) * 100) : 0;
 
