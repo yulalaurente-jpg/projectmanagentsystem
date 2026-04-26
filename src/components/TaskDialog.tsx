@@ -13,6 +13,7 @@ import { Plus, Trash2, Send, ListTree } from "lucide-react";
 import { StatusBadge, PriorityBadge, AssigneeAvatar } from "@/components/TaskBadges";
 import { toast } from "sonner";
 import { ChecklistPanel } from "@/components/ChecklistPanel";
+import { MultiSelectChips } from "@/components/MultiSelectChips";
 
 type Task = Tables<"tasks">;
 type Profile = Tables<"profiles">;
@@ -45,12 +46,15 @@ export function TaskDialog({
   const [description, setDescription] = useState("");
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
+  const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
+  const [employeeIds, setEmployeeIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (task) {
       setTitle(task.title);
       setDescription(task.description ?? "");
       loadComments();
+      loadAssignments();
     }
   }, [task?.id]);
 
@@ -58,6 +62,65 @@ export function TaskDialog({
     if (!task) return;
     const { data } = await supabase.from("task_comments").select("*").eq("task_id", task.id).order("created_at");
     setComments(data ?? []);
+  };
+
+  const loadAssignments = async () => {
+    if (!task) return;
+    const [{ data: ta }, { data: te }] = await Promise.all([
+      supabase.from("task_assignees").select("user_id").eq("task_id", task.id),
+      supabase.from("task_employees").select("employee_id").eq("task_id", task.id),
+    ]);
+    setAssigneeIds((ta ?? []).map((r) => r.user_id));
+    setEmployeeIds((te ?? []).map((r) => r.employee_id));
+  };
+
+  const updateAssignees = async (next: string[]) => {
+    if (!task || !user) return;
+    const prev = assigneeIds;
+    setAssigneeIds(next);
+    const toAdd = next.filter((v) => !prev.includes(v));
+    const toRemove = prev.filter((v) => !next.includes(v));
+    if (toAdd.length) {
+      const { error } = await supabase
+        .from("task_assignees")
+        .insert(toAdd.map((u) => ({ task_id: task.id, user_id: u, assigned_by: user.id })));
+      if (error) toast.error(error.message);
+    }
+    if (toRemove.length) {
+      const { error } = await supabase
+        .from("task_assignees")
+        .delete()
+        .eq("task_id", task.id)
+        .in("user_id", toRemove);
+      if (error) toast.error(error.message);
+    }
+    // Sync legacy single column to first selected (or null) for board/list display
+    const primary = next[0] ?? null;
+    if (primary !== task.assignee_id) await onUpdate(task.id, { assignee_id: primary });
+  };
+
+  const updateEmployees = async (next: string[]) => {
+    if (!task || !user) return;
+    const prev = employeeIds;
+    setEmployeeIds(next);
+    const toAdd = next.filter((v) => !prev.includes(v));
+    const toRemove = prev.filter((v) => !next.includes(v));
+    if (toAdd.length) {
+      const { error } = await supabase
+        .from("task_employees")
+        .insert(toAdd.map((e) => ({ task_id: task.id, employee_id: e, assigned_by: user.id })));
+      if (error) toast.error(error.message);
+    }
+    if (toRemove.length) {
+      const { error } = await supabase
+        .from("task_employees")
+        .delete()
+        .eq("task_id", task.id)
+        .in("employee_id", toRemove);
+      if (error) toast.error(error.message);
+    }
+    const primary = next[0] ?? null;
+    if (primary !== task.employee_id) await onUpdate(task.id, { employee_id: primary });
   };
 
   const saveTitle = async () => {
@@ -214,35 +277,21 @@ export function TaskDialog({
               </Select>
             </Field>
             <Field label="Assignee">
-              <Select
-                value={task.assignee_id ?? "none"}
-                onValueChange={(v) => onUpdate(task.id, { assignee_id: v === "none" ? null : v })}
-              >
-                <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Unassigned</SelectItem>
-                  {profiles.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.display_name || p.email}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <MultiSelectChips
+                placeholder="Unassigned"
+                values={assigneeIds}
+                onChange={updateAssignees}
+                options={profiles.map((p) => ({ value: p.id, label: p.display_name || p.email || "Unknown" }))}
+              />
             </Field>
             {employees && employees.length > 0 && (
               <Field label="Project employee">
-                <Select
-                  value={task.employee_id ?? "none"}
-                  onValueChange={(v) => onUpdate(task.id, { employee_id: v === "none" ? null : v })}
-                >
-                  <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    {employees.map((e) => (
-                      <SelectItem key={e.id} value={e.id}>
-                        {e.full_name}{e.position ? ` · ${e.position}` : ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <MultiSelectChips
+                  placeholder="None"
+                  values={employeeIds}
+                  onChange={updateEmployees}
+                  options={employees.map((e) => ({ value: e.id, label: e.full_name, sub: e.position ?? undefined }))}
+                />
               </Field>
             )}
             <Field label="Due date">
