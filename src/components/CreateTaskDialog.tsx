@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Tables, Enums } from "@/integrations/supabase/types";
+import { MultiSelectChips } from "@/components/MultiSelectChips";
 
 export function CreateTaskDialog({
   open,
@@ -27,6 +28,8 @@ export function CreateTaskDialog({
     priority: Enums<"task_priority">;
     assignee_id: string | null;
     employee_id: string | null;
+    assignee_ids: string[];
+    employee_ids: string[];
     due_date: string | null;
     start_date: string | null;
     labels: string[];
@@ -37,8 +40,8 @@ export function CreateTaskDialog({
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState<Enums<"task_status">>("todo");
   const [priority, setPriority] = useState<Enums<"task_priority">>("medium");
-  const [assignee, setAssignee] = useState<string>("none");
-  const [employee, setEmployee] = useState<string>("none");
+  const [assignees, setAssignees] = useState<string[]>([]);
+  const [employeeIds, setEmployeeIds] = useState<string[]>([]);
   const [dueDate, setDueDate] = useState("");
   const [startDate, setStartDate] = useState("");
   const [labelsStr, setLabelsStr] = useState("");
@@ -46,7 +49,7 @@ export function CreateTaskDialog({
   useEffect(() => {
     if (open) {
       setTitle(""); setDescription(""); setStatus("todo"); setPriority("medium");
-      setAssignee("none"); setEmployee("none"); setDueDate(""); setStartDate(""); setLabelsStr("");
+      setAssignees([]); setEmployeeIds([]); setDueDate(""); setStartDate(""); setLabelsStr("");
     }
   }, [open]);
 
@@ -57,8 +60,10 @@ export function CreateTaskDialog({
       description,
       status,
       priority,
-      assignee_id: assignee === "none" ? null : assignee,
-      employee_id: employee === "none" ? null : employee,
+      assignee_id: assignees[0] ?? null,
+      employee_id: employeeIds[0] ?? null,
+      assignee_ids: assignees,
+      employee_ids: employeeIds,
       due_date: dueDate ? new Date(dueDate).toISOString() : null,
       start_date: startDate ? new Date(startDate).toISOString() : null,
       labels: labelsStr.split(",").map((s) => s.trim()).filter(Boolean),
@@ -110,16 +115,13 @@ export function CreateTaskDialog({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Assignee</Label>
-              <Select value={assignee} onValueChange={setAssignee}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Unassigned</SelectItem>
-                  {profiles.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.display_name || p.email}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Assignees</Label>
+              <MultiSelectChips
+                placeholder="Unassigned"
+                values={assignees}
+                onChange={setAssignees}
+                options={profiles.map((p) => ({ value: p.id, label: p.display_name || p.email || "Unknown" }))}
+              />
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1.5">
@@ -138,18 +140,13 @@ export function CreateTaskDialog({
           </div>
           {employees && employees.length > 0 && (
             <div className="space-y-1.5">
-              <Label>Project employee</Label>
-              <Select value={employee} onValueChange={setEmployee}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {employees.map((e) => (
-                    <SelectItem key={e.id} value={e.id}>
-                      {e.full_name}{e.position ? ` · ${e.position}` : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Project employees</Label>
+              <MultiSelectChips
+                placeholder="None"
+                values={employeeIds}
+                onChange={setEmployeeIds}
+                options={employees.map((e) => ({ value: e.id, label: e.full_name, sub: e.position ?? undefined }))}
+              />
             </div>
           )}
           <DialogFooter>
