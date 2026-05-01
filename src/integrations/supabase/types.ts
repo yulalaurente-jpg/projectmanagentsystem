@@ -1049,7 +1049,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "viewer"
       chat_channel_type: "project" | "direct"
       comment_target_type: "folder" | "file"
       dtr_status: "pending" | "approved" | "rejected"
@@ -1194,7 +1194,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "viewer"],
       chat_channel_type: ["project", "direct"],
       comment_target_type: ["folder", "file"],
       dtr_status: ["pending", "approved", "rejected"],
