@@ -49,7 +49,7 @@ const STATUSES: { value: Enums<"task_status">; label: string; color: string }[] 
 
 function ProjectDetail() {
   const { projectId } = Route.useParams();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [project, setProject] = useState<Project | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -97,6 +97,9 @@ function ProjectDetail() {
 
   const subtasksOf = (id: string) =>
     tasks.filter((t) => t.parent_task_id === id).sort(sortFn(sortBy));
+
+  const canEditTask = (t: Task) =>
+    !!user && (isAdmin || t.reporter_id === user.id || t.assignee_id === user.id);
 
   const reorder = async (sourceId: string, targetId: string) => {
     const src = tasks.find((t) => t.id === sourceId);
@@ -283,6 +286,7 @@ function ProjectDetail() {
                     onDelete={deleteTask}
                     onAddSubtask={(parentId) => { setCreateParent(parentId); setCreateOpen(true); }}
                     onReorder={reorder}
+                    canEditTask={canEditTask}
                   />
                 ))}
               </div>
@@ -340,6 +344,7 @@ function ProjectDetail() {
         onUpdate={updateTask}
         onDelete={deleteTask}
         onAddSubtask={(parentId) => { setCreateParent(parentId); setCreateOpen(true); setOpenTaskId(null); }}
+        canEdit={openTask ? canEditTask(openTask) : false}
       />
     </>
   );
