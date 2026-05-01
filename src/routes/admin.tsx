@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { Shield, ShieldOff, Trash2, Search, CheckCircle2, XCircle, Mail } from "lucide-react";
+import { Shield, ShieldOff, Trash2, Search, CheckCircle2, XCircle, Mail, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { deleteUser, listUsers } from "@/server/admin-actions";
 import {
@@ -41,7 +41,7 @@ export const Route = createFileRoute("/admin")({
 
 interface RoleRow {
   user_id: string;
-  role: "admin" | "user";
+  role: "admin" | "user" | "viewer";
 }
 
 interface AuthUser {
@@ -90,6 +90,7 @@ function AdminPage() {
   useEffect(() => { load(); }, []);
 
   const isAdmin = (uid: string) => roles.some((r) => r.user_id === uid && r.role === "admin");
+  const isViewer = (uid: string) => roles.some((r) => r.user_id === uid && r.role === "viewer");
 
   const toggleAdmin = async (uid: string) => {
     if (isAdmin(uid)) {
@@ -100,6 +101,23 @@ function AdminPage() {
       const { error } = await supabase.from("user_roles").insert({ user_id: uid, role: "admin" });
       if (error) return toast.error(error.message);
       toast.success("Promoted to admin");
+    }
+    load();
+  };
+
+  const toggleViewer = async (uid: string) => {
+    if (isViewer(uid)) {
+      const { error } = await supabase.from("user_roles").delete().eq("user_id", uid).eq("role", "viewer");
+      if (error) return toast.error(error.message);
+      toast.success("Viewer role removed");
+    } else {
+      // Remove admin if present, then assign viewer
+      if (isAdmin(uid)) {
+        await supabase.from("user_roles").delete().eq("user_id", uid).eq("role", "admin");
+      }
+      const { error } = await supabase.from("user_roles").insert({ user_id: uid, role: "viewer" });
+      if (error) return toast.error(error.message);
+      toast.success("Set as viewer");
     }
     load();
   };
@@ -165,6 +183,7 @@ function AdminPage() {
           ) : (
             filtered.map((p) => {
               const admin = isAdmin(p.id);
+              const viewer = isViewer(p.id);
               const initials = (p.display_name || p.email || "?").slice(0, 2).toUpperCase();
               const isSelf = currentUser?.id === p.id;
               return (
@@ -205,6 +224,10 @@ function AdminPage() {
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
                         <Shield className="w-3 h-3" /> Admin
                       </span>
+                    ) : viewer ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-muted text-muted-foreground">
+                        <Eye className="w-3 h-3" /> Viewer
+                      </span>
                     ) : (
                       <span className="text-xs text-muted-foreground">User</span>
                     )}
@@ -212,6 +235,9 @@ function AdminPage() {
                   <div className="flex justify-end gap-1.5">
                     <Button size="sm" variant={admin ? "ghost" : "outline"} onClick={() => toggleAdmin(p.id)} disabled={isSelf} className="h-7 text-xs">
                       {admin ? <><ShieldOff className="w-3.5 h-3.5 mr-1" /> Revoke</> : <><Shield className="w-3.5 h-3.5 mr-1" /> Promote</>}
+                    </Button>
+                    <Button size="sm" variant={viewer ? "ghost" : "outline"} onClick={() => toggleViewer(p.id)} disabled={isSelf || admin} className="h-7 text-xs">
+                      <Eye className="w-3.5 h-3.5 mr-1" /> {viewer ? "Unset" : "Viewer"}
                     </Button>
                     <Button
                       size="sm"
