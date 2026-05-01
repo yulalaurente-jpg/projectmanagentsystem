@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
-import { Plus, Trash2, GripVertical, MoreHorizontal, Calendar as CalendarIcon, FileDown } from "lucide-react";
+import { Plus, Trash2, GripVertical, MoreHorizontal, Calendar as CalendarIcon, FileDown, ChevronDown, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { DynamicIcon, IconPicker, ColorPicker, ICON_OPTIONS } from "@/components/IconPicker";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -229,6 +229,7 @@ function ChecklistCard({
   const [editTitle, setEditTitle] = useState(checklist.title);
   const [dragId, setDragId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState(false);
 
   const done = items.filter((i) => i.is_done).length;
   const pct = items.length === 0 ? 0 : Math.round((done / items.length) * 100);
@@ -247,6 +248,15 @@ function ChecklistCard({
   return (
     <Card className="overflow-hidden border-l-4" style={{ borderLeftColor: checklist.color ?? "#3b82f6" }}>
       <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border bg-muted/30">
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-6 w-6 shrink-0"
+          onClick={() => setCollapsed((c) => !c)}
+          aria-label={collapsed ? "Expand checklist" : "Collapse checklist"}
+        >
+          {collapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+        </Button>
         <DynamicIcon name={checklist.icon} className="w-4 h-4" style={{ color: checklist.color ?? "#3b82f6" } as React.CSSProperties} />
         <Input
           value={editTitle}
@@ -293,6 +303,8 @@ function ChecklistCard({
         <div className="absolute inset-y-0 left-0 transition-all" style={{ width: `${pct}%`, backgroundColor: checklist.color ?? "#3b82f6" }} />
       </div>
 
+      {!collapsed && (
+        <>
       <div className="divide-y divide-border">
         {items.map((it) => (
           <ChecklistItemRow
@@ -324,6 +336,8 @@ function ChecklistCard({
           <Plus className="w-3.5 h-3.5" />
         </Button>
       </form>
+        </>
+      )}
     </Card>
   );
 }
