@@ -38,6 +38,7 @@ export function TaskRow({
   onAddSubtask,
   onReorder,
   depth = 0,
+  canEditTask,
 }: {
   task: Task;
   projectKey: string;
@@ -52,6 +53,8 @@ export function TaskRow({
   /** Move task to a new position relative to a sibling. */
   onReorder?: (sourceId: string, targetId: string) => void;
   depth?: number;
+  /** When false, the row is read-only: no inline edits, drag, or actions menu. */
+  canEditTask?: (task: Task) => boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const children = subtasksOf(task.id);
@@ -62,23 +65,25 @@ export function TaskRow({
   const isCompleted = task.status === "done" || task.status === "removed";
   const isOverdue =
     !!task.due_date && !isCompleted && new Date(task.due_date) < new Date();
+  const editable = canEditTask ? canEditTask(task) : true;
 
   return (
     <>
       <div
-        draggable
+        draggable={editable}
         onDragStart={(e) => {
+          if (!editable) return;
           e.stopPropagation();
           e.dataTransfer.setData("text/task-id", task.id);
           e.dataTransfer.effectAllowed = "move";
         }}
         onDragOver={(e) => {
-          if (!onReorder) return;
+          if (!onReorder || !editable) return;
           const id = e.dataTransfer.types.includes("text/task-id");
           if (id) e.preventDefault();
         }}
         onDrop={(e) => {
-          if (!onReorder) return;
+          if (!onReorder || !editable) return;
           const sid = e.dataTransfer.getData("text/task-id");
           if (sid && sid !== task.id) onReorder(sid, task.id);
         }}
@@ -88,7 +93,7 @@ export function TaskRow({
       >
         <div className="h-5 w-1 rounded-sm" style={{ backgroundColor: colorBar ?? "transparent" }} />
         <div onClick={(e) => e.stopPropagation()} className="text-muted-foreground/60">
-          <GripVertical className="w-3.5 h-3.5" />
+          {editable && <GripVertical className="w-3.5 h-3.5" />}
         </div>
         <div onClick={(e) => e.stopPropagation()}>
           {hasSubs ? (
@@ -105,10 +110,18 @@ export function TaskRow({
           {hasSubs && <span className="ml-1.5 text-[11px] text-muted-foreground font-normal">({children.length})</span>}
         </div>
         <div onClick={(e) => e.stopPropagation()}>
-          <StatusSelect value={task.status} onChange={(v) => onUpdate(task.id, { status: v })} />
+          {editable ? (
+            <StatusSelect value={task.status} onChange={(v) => onUpdate(task.id, { status: v })} />
+          ) : (
+            <StatusBadge status={task.status} />
+          )}
         </div>
         <div onClick={(e) => e.stopPropagation()}>
-          <PrioritySelect value={task.priority} onChange={(v) => onUpdate(task.id, { priority: v })} />
+          {editable ? (
+            <PrioritySelect value={task.priority} onChange={(v) => onUpdate(task.id, { priority: v })} />
+          ) : (
+            <PriorityBadge priority={task.priority} />
+          )}
         </div>
         <div className="flex items-center gap-1.5 min-w-0">
           <AssigneeAvatar profile={assignee} />
@@ -133,6 +146,7 @@ export function TaskRow({
           )}
         </div>
         <div onClick={(e) => e.stopPropagation()} className="flex justify-end">
+          {editable && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button size="icon" variant="ghost" className="h-6 w-6">
@@ -168,6 +182,7 @@ export function TaskRow({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          )}
         </div>
       </div>
       {expanded && hasSubs && (
@@ -186,6 +201,7 @@ export function TaskRow({
               onAddSubtask={onAddSubtask}
               onReorder={onReorder}
               depth={depth + 1}
+              canEditTask={canEditTask}
             />
           ))}
         </>

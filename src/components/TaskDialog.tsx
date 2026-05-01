@@ -30,6 +30,7 @@ export function TaskDialog({
   onUpdate,
   onDelete,
   onAddSubtask,
+  canEdit = true,
 }: {
   task: Task | null;
   projectKey: string;
@@ -40,6 +41,8 @@ export function TaskDialog({
   onUpdate: (id: string, patch: Partial<Task>) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onAddSubtask: (parentId: string) => void;
+  /** When false, fields are read-only and delete is hidden. Comments still allowed. */
+  canEdit?: boolean;
 }) {
   const { user } = useAuth();
   const [title, setTitle] = useState("");
@@ -164,6 +167,7 @@ export function TaskDialog({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             onBlur={saveTitle}
+            readOnly={!canEdit}
             className="text-lg font-semibold border-0 px-0 shadow-none focus-visible:ring-0 h-auto"
           />
         </SheetHeader>
@@ -178,6 +182,7 @@ export function TaskDialog({
                 onBlur={saveDescription}
                 rows={5}
                 placeholder="Add a description…"
+                readOnly={!canEdit}
                 className="mt-1.5"
               />
             </div>
@@ -255,7 +260,7 @@ export function TaskDialog({
 
           <aside className="space-y-4 text-sm">
             <Field label="Status">
-              <Select value={task.status} onValueChange={(v) => onUpdate(task.id, { status: v as Enums<"task_status"> })}>
+              <Select value={task.status} onValueChange={(v) => onUpdate(task.id, { status: v as Enums<"task_status"> })} disabled={!canEdit}>
                 <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todo">To Do</SelectItem>
@@ -266,7 +271,7 @@ export function TaskDialog({
               </Select>
             </Field>
             <Field label="Priority">
-              <Select value={task.priority} onValueChange={(v) => onUpdate(task.id, { priority: v as Enums<"task_priority"> })}>
+              <Select value={task.priority} onValueChange={(v) => onUpdate(task.id, { priority: v as Enums<"task_priority"> })} disabled={!canEdit}>
                 <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="low">Low</SelectItem>
@@ -282,6 +287,7 @@ export function TaskDialog({
                 values={assigneeIds}
                 onChange={updateAssignees}
                 options={profiles.map((p) => ({ value: p.id, label: p.display_name || p.email || "Unknown" }))}
+                disabled={!canEdit}
               />
             </Field>
             {employees && employees.length > 0 && (
@@ -291,6 +297,7 @@ export function TaskDialog({
                   values={employeeIds}
                   onChange={updateEmployees}
                   options={employees.map((e) => ({ value: e.id, label: e.full_name, sub: e.position ?? undefined }))}
+                  disabled={!canEdit}
                 />
               </Field>
             )}
@@ -300,6 +307,7 @@ export function TaskDialog({
                 className="h-8"
                 value={task.due_date ? task.due_date.slice(0, 10) : ""}
                 onChange={(e) => onUpdate(task.id, { due_date: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                disabled={!canEdit}
               />
             </Field>
             <Field label="Start date">
@@ -308,6 +316,7 @@ export function TaskDialog({
                 className="h-8"
                 value={task.start_date ? task.start_date.slice(0, 10) : ""}
                 onChange={(e) => onUpdate(task.id, { start_date: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                disabled={!canEdit}
               />
             </Field>
             <Field label="Labels">
@@ -316,6 +325,7 @@ export function TaskDialog({
                 defaultValue={(task.labels ?? []).join(", ")}
                 onBlur={(e) => onUpdate(task.id, { labels: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })}
                 placeholder="comma, separated"
+                readOnly={!canEdit}
               />
               {(task.labels?.length ?? 0) > 0 && (
                 <div className="flex flex-wrap gap-1 mt-2">
@@ -330,14 +340,16 @@ export function TaskDialog({
               <div>Created {new Date(task.created_at).toLocaleString()}</div>
               <div>Updated {new Date(task.updated_at).toLocaleString()}</div>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full text-destructive hover:text-destructive"
-              onClick={() => { if (confirm("Delete this task?")) { onDelete(task.id); onClose(); } }}
-            >
-              <Trash2 className="w-4 h-4 mr-2" /> Delete task
-            </Button>
+            {canEdit && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full text-destructive hover:text-destructive"
+                onClick={() => { if (confirm("Delete this task?")) { onDelete(task.id); onClose(); } }}
+              >
+                <Trash2 className="w-4 h-4 mr-2" /> Delete task
+              </Button>
+            )}
           </aside>
         </div>
       </SheetContent>
