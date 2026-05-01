@@ -168,7 +168,7 @@ function AdminPage() {
       </header>
       <div className="p-6">
         <Card className="overflow-hidden">
-          <div className="px-4 py-2.5 border-b border-border bg-muted/30 text-[11px] uppercase tracking-wider text-muted-foreground font-medium grid grid-cols-[1.5fr_1fr_100px_100px_100px_180px] gap-3">
+          <div className="px-4 py-2.5 border-b border-border bg-muted/30 text-[11px] uppercase tracking-wider text-muted-foreground font-medium grid grid-cols-[1.5fr_1fr_100px_100px_100px_260px] gap-3">
             <div>User</div>
             <div>Provider · Verified</div>
             <div>Last seen</div>
@@ -187,7 +187,7 @@ function AdminPage() {
               const initials = (p.display_name || p.email || "?").slice(0, 2).toUpperCase();
               const isSelf = currentUser?.id === p.id;
               return (
-                <div key={p.id} className="px-4 py-3 grid grid-cols-[1.5fr_1fr_100px_100px_100px_180px] gap-3 items-center border-b border-border last:border-0 text-sm">
+                <div key={p.id} className="px-4 py-3 grid grid-cols-[1.5fr_1fr_100px_100px_100px_260px] gap-3 items-center border-b border-border last:border-0 text-sm">
                   <div className="flex items-center gap-2.5 min-w-0">
                     <Avatar className="w-8 h-8">
                       <AvatarFallback className="bg-primary text-primary-foreground text-xs">{initials}</AvatarFallback>
