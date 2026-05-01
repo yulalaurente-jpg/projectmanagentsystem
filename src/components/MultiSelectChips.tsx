@@ -14,6 +14,7 @@ export function MultiSelectChips({
   placeholder = "Select…",
   emptyText = "No options",
   className,
+  disabled = false,
 }: {
   options: MSOption[];
   values: string[];
@@ -21,6 +22,7 @@ export function MultiSelectChips({
   placeholder?: string;
   emptyText?: string;
   className?: string;
+  disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const selected = options.filter((o) => values.includes(o.value));
@@ -38,6 +40,7 @@ export function MultiSelectChips({
             type="button"
             variant="outline"
             size="sm"
+            disabled={disabled}
             className="w-full justify-between h-8 text-xs font-normal"
           >
             <span className="truncate text-muted-foreground">
@@ -83,14 +86,16 @@ export function MultiSelectChips({
               className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-accent text-accent-foreground"
             >
               {o.label}
-              <button
-                type="button"
-                onClick={() => toggle(o.value)}
-                className="text-muted-foreground hover:text-foreground"
-                aria-label={`Remove ${o.label}`}
-              >
-                <X className="w-2.5 h-2.5" />
-              </button>
+              {!disabled && (
+                <button
+                  type="button"
+                  onClick={() => toggle(o.value)}
+                  className="text-muted-foreground hover:text-foreground"
+                  aria-label={`Remove ${o.label}`}
+                >
+                  <X className="w-2.5 h-2.5" />
+                </button>
+              )}
             </span>
           ))}
         </div>
