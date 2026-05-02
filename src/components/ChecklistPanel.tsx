@@ -238,6 +238,7 @@ function ChecklistCard({
   onUpdateItem,
   onDeleteItem,
   onReorder,
+  expandSignal,
 }: {
   checklist: Checklist;
   items: Item[];
@@ -248,12 +249,17 @@ function ChecklistCard({
   onUpdateItem: (id: string, patch: Partial<Item>) => Promise<void>;
   onDeleteItem: (id: string) => Promise<void>;
   onReorder: (checklistId: string, ids: string[]) => Promise<void>;
+  expandSignal?: { action: "expand" | "collapse"; nonce: number } | null;
 }) {
   const [newItem, setNewItem] = useState("");
   const [editTitle, setEditTitle] = useState(checklist.title);
   const [dragId, setDragId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(true);
+  useEffect(() => {
+    if (!expandSignal) return;
+    setCollapsed(expandSignal.action === "collapse");
+  }, [expandSignal]);
 
   const done = items.filter((i) => i.is_done).length;
   const pct = items.length === 0 ? 0 : Math.round((done / items.length) * 100);
