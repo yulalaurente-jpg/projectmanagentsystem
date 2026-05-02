@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, ChevronLeft, Search, List, KanbanSquare, GanttChart as GanttIcon } from "lucide-react";
+import { Plus, ChevronLeft, Search, List, KanbanSquare, GanttChart as GanttIcon, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
 import { toast } from "sonner";
 import { TaskRow } from "@/components/TaskRow";
 import { TaskDialog } from "@/components/TaskDialog";
@@ -61,6 +61,7 @@ function ProjectDetail() {
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"list" | "kanban" | "gantt">("list");
   const [sortBy, setSortBy] = useState<"position" | "title" | "status" | "priority" | "due_date" | "created_at">("position");
+  const [taskExpandSignal, setTaskExpandSignal] = useState<{ action: "expand" | "collapse"; nonce: number } | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -248,6 +249,28 @@ function ProjectDetail() {
             <Button size="sm" onClick={() => { setCreateParent(null); setCreateOpen(true); }}>
               <Plus className="w-4 h-4 mr-1.5" /> New task
             </Button>
+            {view === "list" && (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8"
+                  title="Expand all tasks"
+                  onClick={() => setTaskExpandSignal({ action: "expand", nonce: Date.now() })}
+                >
+                  <ChevronsUpDown className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8"
+                  title="Collapse all tasks"
+                  onClick={() => setTaskExpandSignal({ action: "collapse", nonce: Date.now() })}
+                >
+                  <ChevronsDownUp className="w-4 h-4" />
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -287,6 +310,7 @@ function ProjectDetail() {
                     onAddSubtask={(parentId) => { setCreateParent(parentId); setCreateOpen(true); }}
                     onReorder={reorder}
                     canEditTask={canEditTask}
+                    expandSignal={taskExpandSignal}
                   />
                 ))}
               </div>

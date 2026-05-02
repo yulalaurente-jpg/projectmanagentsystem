@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Tables, Enums } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, ChevronDown, MoreHorizontal, Plus, Trash2, GripVertical, AlertTriangle } from "lucide-react";
@@ -39,6 +39,7 @@ export function TaskRow({
   onReorder,
   depth = 0,
   canEditTask,
+  expandSignal,
 }: {
   task: Task;
   projectKey: string;
@@ -55,8 +56,14 @@ export function TaskRow({
   depth?: number;
   /** When false, the row is read-only: no inline edits, drag, or actions menu. */
   canEditTask?: (task: Task) => boolean;
+  /** When changed, forces all rows to expand or collapse. */
+  expandSignal?: { action: "expand" | "collapse"; nonce: number } | null;
 }) {
   const [expanded, setExpanded] = useState(false);
+  useEffect(() => {
+    if (!expandSignal) return;
+    setExpanded(expandSignal.action === "expand");
+  }, [expandSignal]);
   const children = subtasksOf(task.id);
   const hasSubs = children.length > 0;
   const assignee = profiles.find((p) => p.id === task.assignee_id);
@@ -202,6 +209,7 @@ export function TaskRow({
               onReorder={onReorder}
               depth={depth + 1}
               canEditTask={canEditTask}
+              expandSignal={expandSignal}
             />
           ))}
         </>
