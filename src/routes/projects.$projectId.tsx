@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, ChevronLeft, Search, List, KanbanSquare, GanttChart as GanttIcon } from "lucide-react";
+import { Plus, ChevronLeft, Search, List, KanbanSquare, GanttChart as GanttIcon, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
 import { toast } from "sonner";
 import { TaskRow } from "@/components/TaskRow";
 import { TaskDialog } from "@/components/TaskDialog";
