@@ -62,6 +62,9 @@ function ProjectDetail() {
   const [view, setView] = useState<"list" | "kanban" | "gantt">("list");
   const [sortBy, setSortBy] = useState<"position" | "title" | "status" | "priority" | "due_date" | "created_at">("position");
   const [taskExpandSignal, setTaskExpandSignal] = useState<{ action: "expand" | "collapse"; nonce: number } | null>(null);
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterPriority, setFilterPriority] = useState<string>("all");
+  const [filterAssignee, setFilterAssignee] = useState<string>("all");
 
   const load = async () => {
     setLoading(true);
@@ -89,12 +92,19 @@ function ProjectDetail() {
   }, [projectId]);
 
   const parentTasks = useMemo(() => {
-    const filtered = tasks.filter((t) => !t.parent_task_id);
+    let filtered = tasks.filter((t) => !t.parent_task_id);
+    if (filterStatus !== "all") filtered = filtered.filter((t) => t.status === filterStatus);
+    if (filterPriority !== "all") filtered = filtered.filter((t) => t.priority === filterPriority);
+    if (filterAssignee !== "all") {
+      filtered = filtered.filter((t) =>
+        filterAssignee === "unassigned" ? !t.assignee_id : t.assignee_id === filterAssignee,
+      );
+    }
     const sorted = [...filtered].sort(sortFn(sortBy));
     if (!search) return sorted;
     const s = search.toLowerCase();
     return sorted.filter((t) => t.title.toLowerCase().includes(s));
-  }, [tasks, search, sortBy]);
+  }, [tasks, search, sortBy, filterStatus, filterPriority, filterAssignee]);
 
   const subtasksOf = (id: string) =>
     tasks.filter((t) => t.parent_task_id === id).sort(sortFn(sortBy));
@@ -241,6 +251,39 @@ function ProjectDetail() {
                   <SelectItem value="created_at">Created</SelectItem>
                 </SelectContent>
               </Select>
+            )}
+            {view === "list" && (
+              <>
+                <Select value={filterStatus} onValueChange={setFilterStatus}>
+                  <SelectTrigger className="h-8 w-[120px] text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All statuses</SelectItem>
+                    {STATUSES.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={filterPriority} onValueChange={setFilterPriority}>
+                  <SelectTrigger className="h-8 w-[120px] text-xs"><SelectValue placeholder="Priority" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All priorities</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="low">Low</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={filterAssignee} onValueChange={setFilterAssignee}>
+                  <SelectTrigger className="h-8 w-[140px] text-xs"><SelectValue placeholder="Assignee" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All assignees</SelectItem>
+                    <SelectItem value="unassigned">Unassigned</SelectItem>
+                    {profiles.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.display_name || p.email}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </>
             )}
             <div className="relative">
               <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
