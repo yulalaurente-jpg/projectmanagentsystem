@@ -17,11 +17,13 @@ export function ChatView({
   channelLabel,
   channelSubLabel,
   profiles,
+  channelType,
 }: {
   channelId: string;
   channelLabel: string;
   channelSubLabel?: string;
   profiles: Profile[];
+  channelType?: string;
 }) {
   const { user, isAdmin } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -148,7 +150,9 @@ export function ChatView({
             const prev = messages[idx - 1];
             const showHeader = !prev || prev.user_id !== m.user_id;
             const own = m.user_id === user?.id;
-            const canModify = own || isAdmin;
+            const isDm = channelType === "direct";
+            const canDelete = own || isAdmin || isDm;
+            const canModify = own || isAdmin || isDm;
             const initials = nameOf(m.user_id).slice(0, 2).toUpperCase();
             return (
               <div key={m.id} className="flex gap-2.5 group">
