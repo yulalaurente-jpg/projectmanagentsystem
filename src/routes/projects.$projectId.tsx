@@ -61,6 +61,7 @@ function ProjectDetail() {
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"list" | "kanban" | "gantt">("list");
   const [sortBy, setSortBy] = useState<"position" | "title" | "status" | "priority" | "due_date" | "created_at">("position");
+  const [taskExpandSignal, setTaskExpandSignal] = useState<{ action: "expand" | "collapse"; nonce: number } | null>(null);
 
   const load = async () => {
     setLoading(true);
