@@ -249,6 +249,28 @@ function ProjectDetail() {
             <Button size="sm" onClick={() => { setCreateParent(null); setCreateOpen(true); }}>
               <Plus className="w-4 h-4 mr-1.5" /> New task
             </Button>
+            {view === "list" && (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8"
+                  title="Expand all tasks"
+                  onClick={() => setTaskExpandSignal({ action: "expand", nonce: Date.now() })}
+                >
+                  <ChevronsUpDown className="w-4 h-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8"
+                  title="Collapse all tasks"
+                  onClick={() => setTaskExpandSignal({ action: "collapse", nonce: Date.now() })}
+                >
+                  <ChevronsDownUp className="w-4 h-4" />
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -288,6 +310,7 @@ function ProjectDetail() {
                     onAddSubtask={(parentId) => { setCreateParent(parentId); setCreateOpen(true); }}
                     onReorder={reorder}
                     canEditTask={canEditTask}
+                    expandSignal={taskExpandSignal}
                   />
                 ))}
               </div>
