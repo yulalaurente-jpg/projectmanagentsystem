@@ -263,6 +263,7 @@ function ChatPage() {
             channelLabel={activeLabel}
             channelSubLabel={activeSubLabel}
             profiles={profiles}
+            channelType={active.type}
           />
         ) : (
           <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
