@@ -209,6 +209,7 @@ export function TaskRow({
               onReorder={onReorder}
               depth={depth + 1}
               canEditTask={canEditTask}
+              expandSignal={expandSignal}
             />
           ))}
         </>
