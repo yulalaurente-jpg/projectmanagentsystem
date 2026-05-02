@@ -62,6 +62,9 @@ function ProjectDetail() {
   const [view, setView] = useState<"list" | "kanban" | "gantt">("list");
   const [sortBy, setSortBy] = useState<"position" | "title" | "status" | "priority" | "due_date" | "created_at">("position");
   const [taskExpandSignal, setTaskExpandSignal] = useState<{ action: "expand" | "collapse"; nonce: number } | null>(null);
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterPriority, setFilterPriority] = useState<string>("all");
+  const [filterAssignee, setFilterAssignee] = useState<string>("all");
 
   const load = async () => {
     setLoading(true);
@@ -89,12 +92,19 @@ function ProjectDetail() {
   }, [projectId]);
 
   const parentTasks = useMemo(() => {
-    const filtered = tasks.filter((t) => !t.parent_task_id);
+    let filtered = tasks.filter((t) => !t.parent_task_id);
+    if (filterStatus !== "all") filtered = filtered.filter((t) => t.status === filterStatus);
+    if (filterPriority !== "all") filtered = filtered.filter((t) => t.priority === filterPriority);
+    if (filterAssignee !== "all") {
+      filtered = filtered.filter((t) =>
+        filterAssignee === "unassigned" ? !t.assignee_id : t.assignee_id === filterAssignee,
+      );
+    }
     const sorted = [...filtered].sort(sortFn(sortBy));
     if (!search) return sorted;
     const s = search.toLowerCase();
     return sorted.filter((t) => t.title.toLowerCase().includes(s));
-  }, [tasks, search, sortBy]);
+  }, [tasks, search, sortBy, filterStatus, filterPriority, filterAssignee]);
 
   const subtasksOf = (id: string) =>
     tasks.filter((t) => t.parent_task_id === id).sort(sortFn(sortBy));
