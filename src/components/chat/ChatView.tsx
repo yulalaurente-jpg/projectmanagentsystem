@@ -218,14 +218,14 @@ export function ChatView({
                               <Pencil className="w-3 h-3" />
                             </Button>
                           )}
-                          <Button
+                          {canDelete && <Button
                             size="icon"
                             variant="ghost"
                             className="h-6 w-6 text-destructive"
                             onClick={() => remove(m.id)}
                           >
                             <Trash2 className="w-3 h-3" />
-                          </Button>
+                          </Button>}
                         </div>
                       )}
                     </div>
