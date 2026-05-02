@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
-import { Plus, Trash2, GripVertical, MoreHorizontal, Calendar as CalendarIcon, FileDown, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Trash2, GripVertical, MoreHorizontal, Calendar as CalendarIcon, FileDown, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown } from "lucide-react";
 import { toast } from "sonner";
 import { DynamicIcon, IconPicker, ColorPicker, ICON_OPTIONS } from "@/components/IconPicker";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -37,6 +37,7 @@ export function ChecklistPanel({
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [expandSignal, setExpandSignal] = useState<{ action: "expand" | "collapse"; nonce: number } | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -166,6 +167,28 @@ export function ChecklistPanel({
           Checklists ({checklists.length})
         </div>
         <div className="flex gap-1.5">
+          {checklists.length > 0 && (
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 w-7 p-0"
+                title="Expand all"
+                onClick={() => setExpandSignal({ action: "expand", nonce: Date.now() })}
+              >
+                <ChevronsUpDown className="w-3 h-3" />
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 w-7 p-0"
+                title="Collapse all"
+                onClick={() => setExpandSignal({ action: "collapse", nonce: Date.now() })}
+              >
+                <ChevronsDownUp className="w-3 h-3" />
+              </Button>
+            </>
+          )}
           <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setTemplatesOpen(true)}>
             <FileDown className="w-3 h-3 mr-1" /> From template
           </Button>
@@ -194,6 +217,7 @@ export function ChecklistPanel({
             onUpdateItem={updateItem}
             onDeleteItem={deleteItem}
             onReorder={reorderItems}
+            expandSignal={expandSignal}
           />
         ))
       )}
