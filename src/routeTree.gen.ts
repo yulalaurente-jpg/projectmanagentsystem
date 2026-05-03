@@ -20,7 +20,6 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ReportsIndexRouteImport } from './routes/reports.index'
 import { Route as ProjectsIndexRouteImport } from './routes/projects.index'
-import { Route as ReportsFolderIdRouteImport } from './routes/reports.$folderId'
 import { Route as ProjectsProjectIdRouteImport } from './routes/projects.$projectId'
 
 const TemplatesRoute = TemplatesRouteImport.update({
@@ -78,11 +77,6 @@ const ProjectsIndexRoute = ProjectsIndexRouteImport.update({
   path: '/projects/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ReportsFolderIdRoute = ReportsFolderIdRouteImport.update({
-  id: '/reports/$folderId',
-  path: '/reports/$folderId',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ProjectsProjectIdRoute = ProjectsProjectIdRouteImport.update({
   id: '/projects/$projectId',
   path: '/projects/$projectId',
@@ -100,7 +94,6 @@ export interface FileRoutesByFullPath {
   '/inventory': typeof InventoryRoute
   '/templates': typeof TemplatesRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
-  '/reports/$folderId': typeof ReportsFolderIdRoute
   '/projects/': typeof ProjectsIndexRoute
   '/reports/': typeof ReportsIndexRoute
 }
@@ -115,7 +108,6 @@ export interface FileRoutesByTo {
   '/inventory': typeof InventoryRoute
   '/templates': typeof TemplatesRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
-  '/reports/$folderId': typeof ReportsFolderIdRoute
   '/projects': typeof ProjectsIndexRoute
   '/reports': typeof ReportsIndexRoute
 }
@@ -131,7 +123,6 @@ export interface FileRoutesById {
   '/inventory': typeof InventoryRoute
   '/templates': typeof TemplatesRoute
   '/projects/$projectId': typeof ProjectsProjectIdRoute
-  '/reports/$folderId': typeof ReportsFolderIdRoute
   '/projects/': typeof ProjectsIndexRoute
   '/reports/': typeof ReportsIndexRoute
 }
@@ -148,7 +139,6 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/templates'
     | '/projects/$projectId'
-    | '/reports/$folderId'
     | '/projects/'
     | '/reports/'
   fileRoutesByTo: FileRoutesByTo
@@ -163,7 +153,6 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/templates'
     | '/projects/$projectId'
-    | '/reports/$folderId'
     | '/projects'
     | '/reports'
   id:
@@ -178,7 +167,6 @@ export interface FileRouteTypes {
     | '/inventory'
     | '/templates'
     | '/projects/$projectId'
-    | '/reports/$folderId'
     | '/projects/'
     | '/reports/'
   fileRoutesById: FileRoutesById
@@ -194,7 +182,6 @@ export interface RootRouteChildren {
   InventoryRoute: typeof InventoryRoute
   TemplatesRoute: typeof TemplatesRoute
   ProjectsProjectIdRoute: typeof ProjectsProjectIdRoute
-  ReportsFolderIdRoute: typeof ReportsFolderIdRoute
   ProjectsIndexRoute: typeof ProjectsIndexRoute
   ReportsIndexRoute: typeof ReportsIndexRoute
 }
@@ -278,13 +265,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/reports/$folderId': {
-      id: '/reports/$folderId'
-      path: '/reports/$folderId'
-      fullPath: '/reports/$folderId'
-      preLoaderRoute: typeof ReportsFolderIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/projects/$projectId': {
       id: '/projects/$projectId'
       path: '/projects/$projectId'
@@ -306,7 +286,6 @@ const rootRouteChildren: RootRouteChildren = {
   InventoryRoute: InventoryRoute,
   TemplatesRoute: TemplatesRoute,
   ProjectsProjectIdRoute: ProjectsProjectIdRoute,
-  ReportsFolderIdRoute: ReportsFolderIdRoute,
   ProjectsIndexRoute: ProjectsIndexRoute,
   ReportsIndexRoute: ReportsIndexRoute,
 }

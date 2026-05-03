@@ -1,24 +1,17 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { AppLayout, RequireAuth } from "@/components/AppLayout";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Trash2, FileText } from "lucide-react";
+import { ChevronLeft, Upload, Download, Folder, FileText, ExternalLink, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import type { Tables } from "@/integrations/supabase/types";
-import { DynamicIcon, IconPicker, ColorPicker } from "@/components/IconPicker";
+import { listDrive, getDriveDownloadUrl, uploadToDrive, type DriveFile } from "@/server/drive.functions";
 
 export const Route = createFileRoute("/reports/")({
   head: () => ({
     meta: [
-      { title: "Reports — Trackr" },
-      { name: "description", content: "Shared reporting folders with notes and uploaded files." },
+      { title: "Reports — Google Drive" },
+      { name: "description", content: "Browse and upload reports stored in Google Drive." },
     ],
   }),
   component: () => (
@@ -30,131 +23,165 @@ export const Route = createFileRoute("/reports/")({
   ),
 });
 
-type Folder = Tables<"report_folders">;
+type Crumb = { id: string; name: string };
+
+function formatSize(s?: string) {
+  if (!s) return "";
+  const n = Number(s);
+  if (!n) return "";
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  if (n < 1024 * 1024 * 1024) return `${(n / 1024 / 1024).toFixed(1)} MB`;
+  return `${(n / 1024 / 1024 / 1024).toFixed(2)} GB`;
+}
 
 function ReportsPage() {
-  const { user } = useAuth();
-  const [folders, setFolders] = useState<Folder[]>([]);
-  const [counts, setCounts] = useState<Record<string, { reports: number; files: number }>>({});
+  const [files, setFiles] = useState<DriveFile[]>([]);
+  const [crumbs, setCrumbs] = useState<Crumb[]>([{ id: "root", name: "My Drive" }]);
   const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", description: "", color: "#3b82f6", icon: "folder" });
+  const [uploading, setUploading] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
 
-  const load = async () => {
+  const currentId = crumbs[crumbs.length - 1].id;
+
+  const load = useCallback(async (folderId: string) => {
     setLoading(true);
-    const { data: f } = await supabase.from("report_folders").select("*").order("created_at", { ascending: false });
-    setFolders(f ?? []);
-    if (f && f.length > 0) {
-      const ids = f.map((x) => x.id);
-      const [{ data: rs }, { data: fs }] = await Promise.all([
-        supabase.from("reports").select("folder_id").in("folder_id", ids),
-        supabase.from("report_files").select("folder_id").in("folder_id", ids),
-      ]);
-      const c: Record<string, { reports: number; files: number }> = {};
-      f.forEach((fl) => (c[fl.id] = { reports: 0, files: 0 }));
-      rs?.forEach((r) => c[r.folder_id] && (c[r.folder_id].reports += 1));
-      fs?.forEach((r) => c[r.folder_id] && (c[r.folder_id].files += 1));
-      setCounts(c);
+    try {
+      const res = await listDrive({ data: { folderId } });
+      setFiles(res.files);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to load Drive");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
+  }, []);
+
+  useEffect(() => { load(currentId); }, [currentId, load]);
+
+  const openFolder = (f: DriveFile) => {
+    setCrumbs((c) => [...c, { id: f.id, name: f.name }]);
+  };
+  const goTo = (idx: number) => setCrumbs((c) => c.slice(0, idx + 1));
+
+  const download = async (f: DriveFile) => {
+    if (f.mimeType.startsWith("application/vnd.google-apps")) {
+      if (f.webViewLink) window.open(f.webViewLink, "_blank");
+      else toast.error("Google native files must be opened in Drive");
+      return;
+    }
+    try {
+      toast.info("Preparing download…");
+      const res = await getDriveDownloadUrl({ data: { fileId: f.id } });
+      const bin = atob(res.base64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const blob = new Blob([bytes], { type: res.mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = res.name; a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Download failed");
+    }
   };
 
-  useEffect(() => { load(); }, []);
-
-  const create = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-    const { error } = await supabase.from("report_folders").insert({
-      name: form.name.trim(),
-      description: form.description || null,
-      color: form.color,
-      icon: form.icon,
-      created_by: user.id,
-    });
-    if (error) return toast.error(error.message);
-    toast.success("Folder created");
-    setOpen(false);
-    setForm({ name: "", description: "", color: "#3b82f6", icon: "folder" });
-    load();
-  };
-
-  const del = async (id: string) => {
-    if (!confirm("Delete folder and all its contents?")) return;
-    const { error } = await supabase.from("report_folders").delete().eq("id", id);
-    if (error) return toast.error(error.message);
-    toast.success("Deleted");
-    load();
+  const onPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (file.size > 20 * 1024 * 1024) return toast.error("Max 20MB per file");
+    setUploading(true);
+    try {
+      const buf = new Uint8Array(await file.arrayBuffer());
+      let bin = "";
+      for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
+      const base64 = btoa(bin);
+      await uploadToDrive({
+        data: {
+          folderId: currentId,
+          name: file.name,
+          mimeType: file.type || "application/octet-stream",
+          base64,
+        },
+      });
+      toast.success("Uploaded");
+      load(currentId);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
     <>
       <header className="h-14 border-b border-border px-6 flex items-center justify-between bg-card">
-        <h1 className="text-base font-semibold tracking-tight">Reports</h1>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm"><Plus className="w-4 h-4 mr-1.5" /> New folder</Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader><DialogTitle>Create folder</DialogTitle></DialogHeader>
-            <form onSubmit={create} className="space-y-3">
-              <div>
-                <Label>Name</Label>
-                <Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="mt-1" autoFocus />
-              </div>
-              <div>
-                <Label>Description</Label>
-                <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} className="mt-1" />
-              </div>
-              <div>
-                <Label>Color</Label>
-                <div className="mt-1.5"><ColorPicker value={form.color} onChange={(v) => setForm({ ...form, color: v })} /></div>
-              </div>
-              <div>
-                <Label>Icon</Label>
-                <div className="mt-1.5"><IconPicker value={form.icon} onChange={(v) => setForm({ ...form, icon: v })} /></div>
-              </div>
-              <DialogFooter><Button type="submit">Create folder</Button></DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center gap-2 min-w-0">
+          {crumbs.length > 1 && (
+            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => goTo(crumbs.length - 2)}>
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+          )}
+          <h1 className="text-base font-semibold tracking-tight">Reports</h1>
+          <nav className="text-sm text-muted-foreground flex items-center gap-1 min-w-0 ml-2 truncate">
+            {crumbs.map((c, i) => (
+              <span key={c.id} className="flex items-center gap-1 min-w-0">
+                <button onClick={() => goTo(i)} className="hover:text-foreground truncate max-w-[200px]">
+                  {c.name}
+                </button>
+                {i < crumbs.length - 1 && <span>/</span>}
+              </span>
+            ))}
+          </nav>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant="outline" onClick={() => load(currentId)} disabled={loading}>
+            <RefreshCw className={`w-4 h-4 mr-1.5 ${loading ? "animate-spin" : ""}`} /> Refresh
+          </Button>
+          <input ref={fileInput} type="file" className="hidden" onChange={onPick} />
+          <Button size="sm" onClick={() => fileInput.current?.click()} disabled={uploading}>
+            <Upload className="w-4 h-4 mr-1.5" /> {uploading ? "Uploading…" : "Upload"}
+          </Button>
+        </div>
       </header>
       <div className="p-6">
         {loading ? (
-          <div className="text-sm text-muted-foreground">Loading…</div>
-        ) : folders.length === 0 ? (
+          <div className="text-sm text-muted-foreground">Loading Drive…</div>
+        ) : files.length === 0 ? (
           <Card className="p-12 text-center">
             <FileText className="w-10 h-10 mx-auto text-muted-foreground mb-3" />
-            <h2 className="text-base font-semibold">No folders yet</h2>
-            <p className="text-sm text-muted-foreground mb-4">Create a folder to start sharing reports and files.</p>
-            <Button onClick={() => setOpen(true)}><Plus className="w-4 h-4 mr-1.5" /> New folder</Button>
+            <h2 className="text-base font-semibold">This folder is empty</h2>
+            <p className="text-sm text-muted-foreground mb-4">Upload a file to get started.</p>
+            <Button onClick={() => fileInput.current?.click()}><Upload className="w-4 h-4 mr-1.5" /> Upload</Button>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {folders.map((f) => {
-              const c = counts[f.id] ?? { reports: 0, files: 0 };
+          <div className="border border-border rounded-md overflow-hidden bg-card">
+            <div className="grid grid-cols-[1fr_120px_180px_120px] px-4 py-2 text-xs font-medium text-muted-foreground border-b border-border">
+              <div>Name</div><div>Size</div><div>Modified</div><div className="text-right">Actions</div>
+            </div>
+            {files.map((f) => {
+              const isFolder = f.mimeType === "application/vnd.google-apps.folder";
               return (
-                <Card key={f.id} className="group p-0 overflow-hidden hover:shadow-md transition-shadow">
-                  <Link to="/reports/$folderId" params={{ folderId: f.id }} className="block p-5">
-                    <div className="flex items-start gap-3 mb-3">
-                      <div className="w-10 h-10 rounded flex items-center justify-center shrink-0" style={{ backgroundColor: `color-mix(in oklab, ${f.color ?? "#3b82f6"} 20%, transparent)` }}>
-                        <DynamicIcon name={f.icon} className="w-5 h-5" style={{ color: f.color ?? "#3b82f6" } as React.CSSProperties} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="font-semibold truncate">{f.name}</div>
-                        <div className="text-xs text-muted-foreground line-clamp-2">{f.description || "No description"}</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>{c.reports} reports · {c.files} files</span>
-                      <span>{new Date(f.created_at).toLocaleDateString()}</span>
-                    </div>
-                  </Link>
-                  <div className="px-5 pb-3 flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button size="sm" variant="ghost" onClick={() => del(f.id)} className="h-7 text-destructive hover:text-destructive">
-                      <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete
-                    </Button>
+                <div key={f.id} className="grid grid-cols-[1fr_120px_180px_120px] px-4 py-2 items-center border-b border-border last:border-0 hover:bg-muted/40">
+                  <button onClick={() => isFolder ? openFolder(f) : download(f)} className="flex items-center gap-2 min-w-0 text-left">
+                    {isFolder ? <Folder className="w-4 h-4 text-primary shrink-0" /> : <FileText className="w-4 h-4 text-muted-foreground shrink-0" />}
+                    <span className="truncate text-sm">{f.name}</span>
+                  </button>
+                  <div className="text-xs text-muted-foreground">{isFolder ? "—" : formatSize(f.size)}</div>
+                  <div className="text-xs text-muted-foreground">{f.modifiedTime ? new Date(f.modifiedTime).toLocaleString() : ""}</div>
+                  <div className="flex justify-end gap-1">
+                    {f.webViewLink && (
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => window.open(f.webViewLink, "_blank")} title="Open in Drive">
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+                    {!isFolder && (
+                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => download(f)} title="Download">
+                        <Download className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
                   </div>
-                </Card>
+                </div>
               );
             })}
           </div>
