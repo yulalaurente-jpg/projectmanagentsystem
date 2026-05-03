@@ -7,7 +7,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { MessageSquare, Hash, User as UserIcon, Plus, Search } from "lucide-react";
+import { MessageSquare, Hash, User as UserIcon, Plus, Search, Trash2 } from "lucide-react";
 import { ChatView } from "@/components/chat/ChatView";
 import { toast } from "sonner";
 import {
@@ -149,6 +149,20 @@ function ChatPage() {
 
   const active = useMemo(() => channels.find((c) => c.id === activeId) ?? null, [channels, activeId]);
 
+  const deleteDm = async (channelId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm("Delete this direct message conversation? This cannot be undone.")) return;
+    const { error } = await supabase.from("chat_channels").delete().eq("id", channelId);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setChannels((cs) => cs.filter((c) => c.id !== channelId));
+    setMemberships((m) => m.filter((x) => x.channel_id !== channelId));
+    if (activeId === channelId) setActiveId(null);
+    toast.success("Conversation deleted");
+  };
+
   const activeLabel = active
     ? active.type === "project"
       ? `# ${projectName(active.project_id)}`
@@ -241,16 +255,27 @@ function ChatPage() {
               <div className="text-xs text-muted-foreground px-2 py-2">No DMs yet. Click + to start one.</div>
             ) : (
               filtered(dmChannels).map((c) => (
-                <button
+                <div
                   key={c.id}
-                  onClick={() => setActiveId(c.id)}
-                  className={`w-full text-left flex items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors ${
+                  className={`group w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors ${
                     activeId === c.id ? "bg-accent text-accent-foreground" : "hover:bg-accent/50"
                   }`}
                 >
-                  <UserIcon className="w-3.5 h-3.5 text-muted-foreground" />
-                  <span className="truncate">{c.name ?? "Direct message"}</span>
-                </button>
+                  <button
+                    onClick={() => setActiveId(c.id)}
+                    className="flex-1 min-w-0 flex items-center gap-2 text-left"
+                  >
+                    <UserIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    <span className="truncate">{c.name ?? "Direct message"}</span>
+                  </button>
+                  <button
+                    onClick={(e) => deleteDm(c.id, e)}
+                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity"
+                    title="Delete conversation"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               ))
             )}
           </div>
