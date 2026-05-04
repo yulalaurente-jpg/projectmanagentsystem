@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { AppLayout, RequireAuth } from "@/components/AppLayout";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChevronLeft, Upload, Download, Folder, FileText, ExternalLink, RefreshCw } from "lucide-react";
@@ -44,10 +45,17 @@ function ReportsPage() {
 
   const currentId = crumbs[crumbs.length - 1].id;
 
+  const getAuthHeaders = async () => {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    return token ? { authorization: `Bearer ${token}` } : undefined;
+  };
+
   const load = useCallback(async (folderId: string) => {
     setLoading(true);
     try {
-      const res = await listDrive({ data: { folderId } });
+      const headers = await getAuthHeaders();
+      const res = await listDrive({ data: { folderId }, headers });
       setFiles(res.files);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to load Drive");
@@ -71,7 +79,8 @@ function ReportsPage() {
     }
     try {
       toast.info("Preparing download…");
-      const res = await getDriveDownloadUrl({ data: { fileId: f.id } });
+      const headers = await getAuthHeaders();
+      const res = await getDriveDownloadUrl({ data: { fileId: f.id }, headers });
       const bin = atob(res.base64);
       const bytes = new Uint8Array(bin.length);
       for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
@@ -96,6 +105,7 @@ function ReportsPage() {
       let bin = "";
       for (let i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
       const base64 = btoa(bin);
+      const headers = await getAuthHeaders();
       await uploadToDrive({
         data: {
           folderId: currentId,
@@ -103,6 +113,7 @@ function ReportsPage() {
           mimeType: file.type || "application/octet-stream",
           base64,
         },
+        headers,
       });
       toast.success("Uploaded");
       load(currentId);
