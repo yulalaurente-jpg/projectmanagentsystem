@@ -719,6 +719,222 @@ function StatCard({
   );
 }
 
+/* ---------------- Employees analytics ---------------- */
+
+function EmployeesTab({
+  employees, projectEmployees, taskEmployees, dtrs, projects,
+}: {
+  employees: Employee[];
+  projectEmployees: ProjectEmployee[];
+  taskEmployees: TaskEmployee[];
+  dtrs: DTR[];
+  projects: Project[];
+}) {
+  const active = employees.filter((e) => e.is_active).length;
+  const totalHours = dtrs.reduce((s, d) => s + Number(d.total_hours ?? 0), 0);
+  const totalOT = dtrs.reduce((s, d) => s + Number(d.overtime_hours ?? 0), 0);
+  const pendingDTR = dtrs.filter((d) => d.status === "pending").length;
+  const approvedDTR = dtrs.filter((d) => d.status === "approved").length;
+  const payroll = dtrs.reduce((s, d) => {
+    const emp = employees.find((e) => e.id === d.employee_id);
+    const rate = Number(emp?.hourly_rate ?? 0);
+    return s + rate * (Number(d.total_hours ?? 0) + Number(d.overtime_hours ?? 0) * 0.5);
+  }, 0);
+
+  const positionData = (() => {
+    const map: Record<string, number> = {};
+    employees.forEach((e) => {
+      const k = e.position ?? "Unassigned";
+      map[k] = (map[k] ?? 0) + 1;
+    });
+    return Object.entries(map).map(([name, value]) => ({ name, value }));
+  })();
+
+  const hoursPerEmployee = (() => {
+    const map: Record<string, { name: string; hours: number; overtime: number }> = {};
+    employees.forEach((e) => { map[e.id] = { name: e.full_name, hours: 0, overtime: 0 }; });
+    dtrs.forEach((d) => {
+      const row = map[d.employee_id];
+      if (!row) return;
+      row.hours += Number(d.total_hours ?? 0);
+      row.overtime += Number(d.overtime_hours ?? 0);
+    });
+    return Object.values(map)
+      .filter((r) => r.hours + r.overtime > 0)
+      .sort((a, b) => b.hours + b.overtime - (a.hours + a.overtime))
+      .slice(0, 10);
+  })();
+
+  const taskLoad = (() => {
+    const map: Record<string, { name: string; tasks: number }> = {};
+    employees.forEach((e) => { map[e.id] = { name: e.full_name, tasks: 0 }; });
+    taskEmployees.forEach((te) => {
+      const row = map[te.employee_id];
+      if (row) row.tasks += 1;
+    });
+    return Object.values(map).filter((r) => r.tasks > 0).sort((a, b) => b.tasks - a.tasks).slice(0, 10);
+  })();
+
+  const projectAssignments = (() => {
+    return projects.map((p) => ({
+      name: p.key,
+      employees: projectEmployees.filter((pe) => pe.project_id === p.id).length,
+    })).filter((r) => r.employees > 0);
+  })();
+
+  const dtrTrend = (() => {
+    const days = 14;
+    const today = startOfDay(new Date());
+    return Array.from({ length: days }, (_, i) => {
+      const day = subDays(today, days - 1 - i);
+      const dayStr = format(day, "yyyy-MM-dd");
+      const rows = dtrs.filter((d) => d.work_date === dayStr);
+      return {
+        date: format(day, "MMM d"),
+        hours: rows.reduce((s, r) => s + Number(r.total_hours ?? 0), 0),
+        overtime: rows.reduce((s, r) => s + Number(r.overtime_hours ?? 0), 0),
+      };
+    });
+  })();
+
+  const dtrStatusData = (() => {
+    const counts: Record<string, number> = { pending: 0, approved: 0, rejected: 0 };
+    dtrs.forEach((d) => (counts[d.status] = (counts[d.status] ?? 0) + 1));
+    const colors: Record<string, string> = { pending: "#f59e0b", approved: "#10b981", rejected: "#ef4444" };
+    return Object.entries(counts).filter(([, v]) => v > 0).map(([name, value]) => ({ name, value, fill: colors[name] }));
+  })();
+
+  const PIE_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#a855f7", "#ef4444", "#06b6d4", "#8b5cf6"];
+
+  return (
+    <>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatCard label="Employees" value={employees.length} icon={Users} color="text-foreground" />
+        <StatCard label="Active" value={active} icon={UserCheck} color="text-emerald-500" />
+        <StatCard label="Total Hours" value={totalHours.toFixed(1)} icon={Timer} color="text-blue-500" />
+        <StatCard label="Est. Payroll" value={`$${payroll.toLocaleString(undefined, { maximumFractionDigits: 0 })}`} icon={DollarSign} color="text-emerald-500" />
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <RequestStat label="Overtime hrs" value={Number(totalOT.toFixed(1))} icon={Clock} color="#f59e0b" />
+        <RequestStat label="DTR Pending" value={pendingDTR} icon={Clock} color="#f59e0b" />
+        <RequestStat label="DTR Approved" value={approvedDTR} icon={CheckCircle2} color="#10b981" />
+        <RequestStat label="Assignments" value={projectEmployees.length} icon={Briefcase} color="#3b82f6" />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card className="p-5">
+          <h3 className="text-sm font-semibold mb-1">Employees by Position</h3>
+          <p className="text-xs text-muted-foreground mb-4">Team composition</p>
+          {positionData.length === 0 ? (
+            <div className="h-[240px] flex items-center justify-center text-xs text-muted-foreground">No employees yet.</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={240}>
+              <PieChart>
+                <Pie data={positionData} dataKey="value" nameKey="name" innerRadius={50} outerRadius={90} paddingAngle={2}>
+                  {positionData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </Card>
+
+        <Card className="p-5">
+          <h3 className="text-sm font-semibold mb-1">DTR Status</h3>
+          <p className="text-xs text-muted-foreground mb-4">Approval pipeline</p>
+          {dtrStatusData.length === 0 ? (
+            <div className="h-[240px] flex items-center justify-center text-xs text-muted-foreground">No time records yet.</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={240}>
+              <PieChart>
+                <Pie data={dtrStatusData} dataKey="value" nameKey="name" innerRadius={50} outerRadius={90} paddingAngle={2}>
+                  {dtrStatusData.map((d, i) => <Cell key={i} fill={d.fill} />)}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </Card>
+
+        <Card className="p-5 lg:col-span-2">
+          <h3 className="text-sm font-semibold mb-1">Hours Logged (last 14 days)</h3>
+          <p className="text-xs text-muted-foreground mb-4">Regular vs overtime</p>
+          <ResponsiveContainer width="100%" height={260}>
+            <LineChart data={dtrTrend}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="date" fontSize={11} stroke="hsl(var(--muted-foreground))" />
+              <YAxis fontSize={11} stroke="hsl(var(--muted-foreground))" />
+              <Tooltip />
+              <Legend />
+              <Line type="monotone" dataKey="hours" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} />
+              <Line type="monotone" dataKey="overtime" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </Card>
+
+        <Card className="p-5">
+          <h3 className="text-sm font-semibold mb-1">Top Hours by Employee</h3>
+          <p className="text-xs text-muted-foreground mb-4">Total logged hours</p>
+          {hoursPerEmployee.length === 0 ? (
+            <div className="h-[260px] flex items-center justify-center text-xs text-muted-foreground">No hours logged.</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={hoursPerEmployee} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis type="number" fontSize={11} stroke="hsl(var(--muted-foreground))" />
+                <YAxis type="category" dataKey="name" fontSize={11} stroke="hsl(var(--muted-foreground))" width={120} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="hours" stackId="a" fill="#3b82f6" />
+                <Bar dataKey="overtime" stackId="a" fill="#f59e0b" />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </Card>
+
+        <Card className="p-5">
+          <h3 className="text-sm font-semibold mb-1">Task Load</h3>
+          <p className="text-xs text-muted-foreground mb-4">Tasks assigned per employee</p>
+          {taskLoad.length === 0 ? (
+            <div className="h-[260px] flex items-center justify-center text-xs text-muted-foreground">No task assignments.</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={taskLoad} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis type="number" fontSize={11} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
+                <YAxis type="category" dataKey="name" fontSize={11} stroke="hsl(var(--muted-foreground))" width={120} />
+                <Tooltip />
+                <Bar dataKey="tasks" fill="#a855f7" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </Card>
+
+        <Card className="p-5 lg:col-span-2">
+          <h3 className="text-sm font-semibold mb-1">Employees per Project</h3>
+          <p className="text-xs text-muted-foreground mb-4">Manpower distribution</p>
+          {projectAssignments.length === 0 ? (
+            <div className="h-[240px] flex items-center justify-center text-xs text-muted-foreground">No project assignments.</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={projectAssignments}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="name" fontSize={11} stroke="hsl(var(--muted-foreground))" />
+                <YAxis fontSize={11} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="employees" fill="#06b6d4" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </Card>
+      </div>
+    </>
+  );
+}
+
 function RequestStat({
   label, value, icon: Icon, color,
 }: {
