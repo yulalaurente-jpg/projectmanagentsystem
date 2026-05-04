@@ -24,6 +24,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import {
   CheckCircle2, Clock, AlertCircle, ListTodo,
   Package, AlertTriangle, Truck, PackageCheck, XCircle,
+  Users, UserCheck, Briefcase, DollarSign, Timer,
 } from "lucide-react";
 import { format, subDays, startOfDay } from "date-fns";
 
@@ -48,6 +49,10 @@ type Profile = Tables<"profiles">;
 type Project = Tables<"projects">;
 type Material = Tables<"materials">;
 type MaterialRequest = Tables<"material_requests">;
+type Employee = Tables<"employees">;
+type ProjectEmployee = Tables<"project_employees">;
+type TaskEmployee = Tables<"task_employees">;
+type DTR = Tables<"daily_time_records">;
 
 const STATUS_COLORS: Record<string, string> = {
   todo: "#94a3b8",
@@ -75,22 +80,34 @@ function AnalyticsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
   const [requests, setRequests] = useState<MaterialRequest[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [projectEmployees, setProjectEmployees] = useState<ProjectEmployee[]>([]);
+  const [taskEmployees, setTaskEmployees] = useState<TaskEmployee[]>([]);
+  const [dtrs, setDtrs] = useState<DTR[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
-      const [{ data: t }, { data: p }, { data: pr }, { data: m }, { data: r }] = await Promise.all([
+      const [{ data: t }, { data: p }, { data: pr }, { data: m }, { data: r }, { data: e }, { data: pe }, { data: te }, { data: d }] = await Promise.all([
         supabase.from("tasks").select("*"),
         supabase.from("profiles").select("*"),
         supabase.from("projects").select("*"),
         supabase.from("materials").select("*"),
         supabase.from("material_requests").select("*"),
+        supabase.from("employees").select("*"),
+        supabase.from("project_employees").select("*"),
+        supabase.from("task_employees").select("*"),
+        supabase.from("daily_time_records").select("*"),
       ]);
       setTasks(t ?? []);
       setProfiles(p ?? []);
       setProjects(pr ?? []);
       setMaterials(m ?? []);
       setRequests(r ?? []);
+      setEmployees(e ?? []);
+      setProjectEmployees(pe ?? []);
+      setTaskEmployees(te ?? []);
+      setDtrs(d ?? []);
       setLoading(false);
     })();
   }, []);
@@ -108,6 +125,7 @@ function AnalyticsPage() {
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="project">Per Project</TabsTrigger>
             <TabsTrigger value="inventory">Inventory</TabsTrigger>
+            <TabsTrigger value="employees">Employees</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -120,6 +138,16 @@ function AnalyticsPage() {
 
           <TabsContent value="inventory" className="space-y-6">
             <InventoryTab materials={materials} requests={requests} projects={projects} />
+          </TabsContent>
+
+          <TabsContent value="employees" className="space-y-6">
+            <EmployeesTab
+              employees={employees}
+              projectEmployees={projectEmployees}
+              taskEmployees={taskEmployees}
+              dtrs={dtrs}
+              projects={projects}
+            />
           </TabsContent>
         </Tabs>
       </div>
