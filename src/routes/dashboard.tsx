@@ -76,7 +76,7 @@ function DashboardPage() {
     const overdue = tasks.filter(
       (t) => t.due_date && new Date(t.due_date) < new Date() && t.status !== "done" && t.status !== "removed",
     ).length;
-    const lowStock = materials.filter((m) => Number(m.quantity ?? 0) <= Number(m.reorder_level ?? 0)).length;
+    const lowStock = materials.filter((m) => Number(m.stock_quantity ?? 0) <= Number(m.min_stock ?? 0)).length;
     const pendingReq = requests.filter((r) => r.status === "requested").length;
     const payroll = dtrs.reduce((s, d) => {
       const emp = employees.find((e) => e.id === d.employee_id);
