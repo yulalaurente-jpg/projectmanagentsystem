@@ -12,7 +12,7 @@ import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, ClipboardList, Trash2, CheckCircle2, XCircle, ArrowLeft, Search, Briefcase } from "lucide-react";
+import { Plus, ClipboardList, Trash2, CheckCircle2, XCircle, ArrowLeft, Search, Briefcase, X } from "lucide-react";
 import { toast } from "sonner";
 
 type DTR = Tables<"daily_time_records">;
@@ -93,18 +93,17 @@ function DTRPage() {
     return { totalHrs, totalOt, approved, pending, count: personRecords.length };
   }, [personRecords]);
 
-  const create = async (input: Partial<DTR> & { employee_id: string; work_date: string }) => {
-    if (!user) return;
-    const total = computeHours(input);
+  const create = async (inputs: Array<Partial<DTR> & { employee_id: string; work_date: string }>) => {
+    if (!user || inputs.length === 0) return;
+    const rows = inputs.map((i) => ({ ...i, total_hours: computeHours(i), created_by: user.id }));
     const { data, error } = await supabase
       .from("daily_time_records")
-      .insert({ ...input, total_hours: total, created_by: user.id })
-      .select()
-      .single();
+      .insert(rows)
+      .select();
     if (error) { toast.error(error.message); return; }
-    if (data) setRecords((rs) => [data, ...rs]);
+    if (data) setRecords((rs) => [...data, ...rs]);
     setOpen(false);
-    toast.success("Job record added");
+    toast.success(`${data?.length ?? 0} job record${(data?.length ?? 0) === 1 ? "" : "s"} added`);
   };
 
   const setStatus = async (id: string, status: DStatus) => {
@@ -325,37 +324,43 @@ function DTRDialog({ open, onOpenChange, employees, lockedEmployeeId, projects, 
   lockedEmployeeId?: string | null;
   projects: Project[];
   tasks: Task[];
-  onSave: (input: Partial<DTR> & { employee_id: string; work_date: string }) => Promise<void>;
+  onSave: (inputs: Array<Partial<DTR> & { employee_id: string; work_date: string }>) => Promise<void>;
 }) {
   const today = new Date().toISOString().slice(0, 10);
   const [employeeId, setEmployeeId] = useState("");
-  const [projectId, setProjectId] = useState<string>("none");
-  const [taskId, setTaskId] = useState<string>("none");
   const [date, setDate] = useState(today);
-  const [tIn, setTIn] = useState("08:00");
-  const [bOut, setBOut] = useState("12:00");
-  const [bIn, setBIn] = useState("13:00");
-  const [tOut, setTOut] = useState("17:00");
-  const [ot, setOt] = useState("0");
-  const [notes, setNotes] = useState("");
+  type EntryRow = {
+    projectId: string; taskId: string;
+    tIn: string; bOut: string; bIn: string; tOut: string;
+    ot: string; notes: string;
+  };
+  const blankEntry = (): EntryRow => ({
+    projectId: "none", taskId: "none",
+    tIn: "08:00", bOut: "12:00", bIn: "13:00", tOut: "17:00",
+    ot: "0", notes: "",
+  });
+  const [entries, setEntries] = useState<EntryRow[]>([blankEntry()]);
 
   useEffect(() => {
     if (open) {
       setEmployeeId(lockedEmployeeId ?? "");
-      setProjectId("none"); setTaskId("none"); setDate(today);
-      setTIn("08:00"); setBOut("12:00"); setBIn("13:00"); setTOut("17:00"); setOt("0"); setNotes("");
+      setDate(today);
+      setEntries([blankEntry()]);
     }
   }, [open, lockedEmployeeId, today]);
 
   const toIso = (t: string) => t ? new Date(`${date}T${t}:00`).toISOString() : null;
-  const projTasks = tasks.filter((t) => projectId !== "none" && t.project_id === projectId);
   const lockedEmployee = employees.find((e) => e.id === lockedEmployeeId);
+  const updateEntry = (i: number, patch: Partial<EntryRow>) =>
+    setEntries((es) => es.map((e, idx) => idx === i ? { ...e, ...patch } : e));
+  const removeEntry = (i: number) =>
+    setEntries((es) => es.length > 1 ? es.filter((_, idx) => idx !== i) : es);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader><DialogTitle>New job entry{lockedEmployee ? ` — ${lockedEmployee.full_name}` : ""}</DialogTitle></DialogHeader>
-        <div className="space-y-3">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>New job entries{lockedEmployee ? ` — ${lockedEmployee.full_name}` : ""}</DialogTitle></DialogHeader>
+        <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Employee *</Label>
@@ -371,57 +376,80 @@ function DTRDialog({ open, onOpenChange, employees, lockedEmployeeId, projects, 
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Project</Label>
-              <Select value={projectId} onValueChange={(v) => { setProjectId(v); setTaskId("none"); }}>
-                <SelectTrigger><SelectValue placeholder="Optional" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Job / Task</Label>
-              <Select value={taskId} onValueChange={setTaskId} disabled={projectId === "none"}>
-                <SelectTrigger><SelectValue placeholder="Optional" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {projTasks.map((t) => <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="grid grid-cols-4 gap-3">
-            <div><Label>Time in</Label><Input type="time" value={tIn} onChange={(e) => setTIn(e.target.value)} /></div>
-            <div><Label>Break out</Label><Input type="time" value={bOut} onChange={(e) => setBOut(e.target.value)} /></div>
-            <div><Label>Break in</Label><Input type="time" value={bIn} onChange={(e) => setBIn(e.target.value)} /></div>
-            <div><Label>Time out</Label><Input type="time" value={tOut} onChange={(e) => setTOut(e.target.value)} /></div>
-          </div>
-          <div>
-            <Label>Overtime hours</Label>
-            <Input type="number" step="0.25" value={ot} onChange={(e) => setOt(e.target.value)} />
-          </div>
-          <div>
-            <Label>Job notes</Label>
-            <Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="What was accomplished today?" />
+
+          <div className="space-y-3">
+            {entries.map((entry, i) => {
+              const projTasks = tasks.filter((t) => entry.projectId !== "none" && t.project_id === entry.projectId);
+              return (
+                <Card key={i} className="p-3 space-y-3 relative bg-muted/30">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-muted-foreground">Entry #{i + 1}</span>
+                    {entries.length > 1 && (
+                      <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => removeEntry(i)}>
+                        <X className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">Project</Label>
+                      <Select value={entry.projectId} onValueChange={(v) => updateEntry(i, { projectId: v, taskId: "none" })}>
+                        <SelectTrigger><SelectValue placeholder="Optional" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">None</SelectItem>
+                          {projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Job / Task</Label>
+                      <Select value={entry.taskId} onValueChange={(v) => updateEntry(i, { taskId: v })} disabled={entry.projectId === "none"}>
+                        <SelectTrigger><SelectValue placeholder="Optional" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">None</SelectItem>
+                          {projTasks.map((t) => <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2">
+                    <div><Label className="text-xs">Time in</Label><Input type="time" value={entry.tIn} onChange={(e) => updateEntry(i, { tIn: e.target.value })} /></div>
+                    <div><Label className="text-xs">Break out</Label><Input type="time" value={entry.bOut} onChange={(e) => updateEntry(i, { bOut: e.target.value })} /></div>
+                    <div><Label className="text-xs">Break in</Label><Input type="time" value={entry.bIn} onChange={(e) => updateEntry(i, { bIn: e.target.value })} /></div>
+                    <div><Label className="text-xs">Time out</Label><Input type="time" value={entry.tOut} onChange={(e) => updateEntry(i, { tOut: e.target.value })} /></div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <Label className="text-xs">Overtime hrs</Label>
+                      <Input type="number" step="0.25" value={entry.ot} onChange={(e) => updateEntry(i, { ot: e.target.value })} />
+                    </div>
+                    <div className="col-span-2">
+                      <Label className="text-xs">Notes</Label>
+                      <Textarea rows={1} value={entry.notes} onChange={(e) => updateEntry(i, { notes: e.target.value })} placeholder="What was accomplished?" />
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+            <Button type="button" variant="outline" size="sm" onClick={() => setEntries((es) => [...es, blankEntry()])}>
+              <Plus className="w-3.5 h-3.5 mr-1.5" /> Add another project entry
+            </Button>
           </div>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button disabled={!employeeId} onClick={() => onSave({
+          <Button disabled={!employeeId} onClick={() => onSave(entries.map((entry) => ({
             employee_id: employeeId,
             work_date: date,
-            project_id: projectId === "none" ? null : projectId,
-            task_id: taskId === "none" ? null : taskId,
-            time_in: toIso(tIn),
-            break_out: toIso(bOut),
-            break_in: toIso(bIn),
-            time_out: toIso(tOut),
-            overtime_hours: parseFloat(ot) || 0,
-            notes: notes.trim() || null,
-          })}>Save</Button>
+            project_id: entry.projectId === "none" ? null : entry.projectId,
+            task_id: entry.taskId === "none" ? null : entry.taskId,
+            time_in: toIso(entry.tIn),
+            break_out: toIso(entry.bOut),
+            break_in: toIso(entry.bIn),
+            time_out: toIso(entry.tOut),
+            overtime_hours: parseFloat(entry.ot) || 0,
+            notes: entry.notes.trim() || null,
+          })))}>Save {entries.length > 1 ? `(${entries.length})` : ""}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
