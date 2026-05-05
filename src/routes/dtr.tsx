@@ -12,7 +12,8 @@ import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, ClipboardList, Trash2, CheckCircle2, XCircle, ArrowLeft, Search, Briefcase, X } from "lucide-react";
+import { Plus, ClipboardList, Trash2, CheckCircle2, XCircle, ArrowLeft, Search, Briefcase, X, Users } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 
 type DTR = Tables<"daily_time_records">;
