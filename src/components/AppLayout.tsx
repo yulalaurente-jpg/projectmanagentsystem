@@ -1,6 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/context/AuthContext";
-import { KanbanSquare, FolderKanban, Shield, LogOut, User as UserIcon, BarChart3, FileText, ListChecks, Package, MessageSquare, Users, ClipboardList } from "lucide-react";
+import { KanbanSquare, FolderKanban, Shield, LogOut, User as UserIcon, BarChart3, FileText, ListChecks, Package, MessageSquare, Users, ClipboardList, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { type ReactNode } from "react";
@@ -17,6 +17,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   };
 
   const navItems = [
+    { to: "/dashboard" as const, label: "Dashboard", icon: LayoutDashboard },
     { to: "/projects", label: "Projects", icon: FolderKanban },
     { to: "/inventory" as const, label: "Inventory", icon: Package },
     { to: "/employees" as const, label: "Employees", icon: Users },

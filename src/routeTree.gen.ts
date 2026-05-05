@@ -13,6 +13,7 @@ import { Route as TemplatesRouteImport } from './routes/templates'
 import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as EmployeesRouteImport } from './routes/employees'
 import { Route as DtrRouteImport } from './routes/dtr'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
@@ -40,6 +41,11 @@ const EmployeesRoute = EmployeesRouteImport.update({
 const DtrRoute = DtrRouteImport.update({
   id: '/dtr',
   path: '/dtr',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChatRoute = ChatRouteImport.update({
@@ -89,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof AnalyticsRoute
   '/auth': typeof AuthRoute
   '/chat': typeof ChatRoute
+  '/dashboard': typeof DashboardRoute
   '/dtr': typeof DtrRoute
   '/employees': typeof EmployeesRoute
   '/inventory': typeof InventoryRoute
@@ -103,6 +110,7 @@ export interface FileRoutesByTo {
   '/analytics': typeof AnalyticsRoute
   '/auth': typeof AuthRoute
   '/chat': typeof ChatRoute
+  '/dashboard': typeof DashboardRoute
   '/dtr': typeof DtrRoute
   '/employees': typeof EmployeesRoute
   '/inventory': typeof InventoryRoute
@@ -118,6 +126,7 @@ export interface FileRoutesById {
   '/analytics': typeof AnalyticsRoute
   '/auth': typeof AuthRoute
   '/chat': typeof ChatRoute
+  '/dashboard': typeof DashboardRoute
   '/dtr': typeof DtrRoute
   '/employees': typeof EmployeesRoute
   '/inventory': typeof InventoryRoute
@@ -134,6 +143,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/auth'
     | '/chat'
+    | '/dashboard'
     | '/dtr'
     | '/employees'
     | '/inventory'
@@ -148,6 +158,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/auth'
     | '/chat'
+    | '/dashboard'
     | '/dtr'
     | '/employees'
     | '/inventory'
@@ -162,6 +173,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/auth'
     | '/chat'
+    | '/dashboard'
     | '/dtr'
     | '/employees'
     | '/inventory'
@@ -177,6 +189,7 @@ export interface RootRouteChildren {
   AnalyticsRoute: typeof AnalyticsRoute
   AuthRoute: typeof AuthRoute
   ChatRoute: typeof ChatRoute
+  DashboardRoute: typeof DashboardRoute
   DtrRoute: typeof DtrRoute
   EmployeesRoute: typeof EmployeesRoute
   InventoryRoute: typeof InventoryRoute
@@ -214,6 +227,13 @@ declare module '@tanstack/react-router' {
       path: '/dtr'
       fullPath: '/dtr'
       preLoaderRoute: typeof DtrRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/chat': {
@@ -281,6 +301,7 @@ const rootRouteChildren: RootRouteChildren = {
   AnalyticsRoute: AnalyticsRoute,
   AuthRoute: AuthRoute,
   ChatRoute: ChatRoute,
+  DashboardRoute: DashboardRoute,
   DtrRoute: DtrRoute,
   EmployeesRoute: EmployeesRoute,
   InventoryRoute: InventoryRoute,
@@ -292,12 +313,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
