@@ -12,7 +12,8 @@ import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, ClipboardList, Trash2, CheckCircle2, XCircle, ArrowLeft, Search, Briefcase, X } from "lucide-react";
+import { Plus, ClipboardList, Trash2, CheckCircle2, XCircle, ArrowLeft, Search, Briefcase, X, Users } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 
 type DTR = Tables<"daily_time_records">;
@@ -327,14 +328,15 @@ function DTRDialog({ open, onOpenChange, employees, lockedEmployeeId, projects, 
   onSave: (inputs: Array<Partial<DTR> & { employee_id: string; work_date: string }>) => Promise<void>;
 }) {
   const today = new Date().toISOString().slice(0, 10);
-  const [employeeId, setEmployeeId] = useState("");
   const [date, setDate] = useState(today);
   type EntryRow = {
+    employeeIds: string[];
     projectId: string; taskId: string;
     tIn: string; bOut: string; bIn: string; tOut: string;
     ot: string; notes: string;
   };
   const blankEntry = (): EntryRow => ({
+    employeeIds: lockedEmployeeId ? [lockedEmployeeId] : [],
     projectId: "none", taskId: "none",
     tIn: "08:00", bOut: "12:00", bIn: "13:00", tOut: "17:00",
     ot: "0", notes: "",
@@ -343,38 +345,41 @@ function DTRDialog({ open, onOpenChange, employees, lockedEmployeeId, projects, 
 
   useEffect(() => {
     if (open) {
-      setEmployeeId(lockedEmployeeId ?? "");
       setDate(today);
-      setEntries([blankEntry()]);
+      setEntries([{
+        employeeIds: lockedEmployeeId ? [lockedEmployeeId] : [],
+        projectId: "none", taskId: "none",
+        tIn: "08:00", bOut: "12:00", bIn: "13:00", tOut: "17:00",
+        ot: "0", notes: "",
+      }]);
     }
   }, [open, lockedEmployeeId, today]);
 
   const toIso = (t: string) => t ? new Date(`${date}T${t}:00`).toISOString() : null;
   const lockedEmployee = employees.find((e) => e.id === lockedEmployeeId);
+  const toggleEmployee = (i: number, empId: string) =>
+    setEntries((es) => es.map((e, idx) => idx === i ? {
+      ...e,
+      employeeIds: e.employeeIds.includes(empId)
+        ? e.employeeIds.filter((x) => x !== empId)
+        : [...e.employeeIds, empId],
+    } : e));
   const updateEntry = (i: number, patch: Partial<EntryRow>) =>
     setEntries((es) => es.map((e, idx) => idx === i ? { ...e, ...patch } : e));
   const removeEntry = (i: number) =>
     setEntries((es) => es.length > 1 ? es.filter((_, idx) => idx !== i) : es);
+
+  const totalRows = entries.reduce((s, e) => s + e.employeeIds.length, 0);
+  const canSave = entries.every((e) => e.employeeIds.length > 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>New job entries{lockedEmployee ? ` — ${lockedEmployee.full_name}` : ""}</DialogTitle></DialogHeader>
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Employee *</Label>
-              <Select value={employeeId} onValueChange={setEmployeeId} disabled={!!lockedEmployeeId}>
-                <SelectTrigger><SelectValue placeholder="Choose" /></SelectTrigger>
-                <SelectContent>
-                  {employees.map((e) => <SelectItem key={e.id} value={e.id}>{e.full_name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Date *</Label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-            </div>
+          <div>
+            <Label>Date *</Label>
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
 
           <div className="space-y-3">
@@ -388,6 +393,54 @@ function DTRDialog({ open, onOpenChange, employees, lockedEmployeeId, projects, 
                       <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => removeEntry(i)}>
                         <X className="w-3.5 h-3.5" />
                       </Button>
+                    )}
+                  </div>
+                  <div>
+                    <Label className="text-xs">Employees * ({entry.employeeIds.length})</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-full justify-start font-normal h-9">
+                          <Users className="w-3.5 h-3.5 mr-2" />
+                          {entry.employeeIds.length === 0 ? <span className="text-muted-foreground">Select employees…</span> : (
+                            <span className="truncate">{entry.employeeIds.map((id) => employees.find((e) => e.id === id)?.full_name).filter(Boolean).join(", ")}</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[360px] p-0 max-h-[260px] overflow-y-auto">
+                        <div className="p-1">
+                          {employees.map((emp) => {
+                            const checked = entry.employeeIds.includes(emp.id);
+                            return (
+                              <button
+                                type="button"
+                                key={emp.id}
+                                onClick={() => toggleEmployee(i, emp.id)}
+                                className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm text-left hover:bg-accent ${checked ? "bg-accent/60" : ""}`}
+                              >
+                                <span className={`w-4 h-4 rounded border flex items-center justify-center text-[10px] ${checked ? "bg-primary border-primary text-primary-foreground" : "border-border"}`}>
+                                  {checked ? "✓" : ""}
+                                </span>
+                                <span className="flex-1 truncate">{emp.full_name}</span>
+                                {emp.position && <span className="text-xs text-muted-foreground truncate">{emp.position}</span>}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                    {entry.employeeIds.length > 1 && (
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {entry.employeeIds.map((id) => {
+                          const emp = employees.find((e) => e.id === id);
+                          if (!emp) return null;
+                          return (
+                            <span key={id} className="inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                              {emp.full_name}
+                              <button type="button" onClick={() => toggleEmployee(i, id)} className="hover:text-destructive"><X className="w-3 h-3" /></button>
+                            </span>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
                   <div className="grid grid-cols-2 gap-3">
@@ -438,8 +491,8 @@ function DTRDialog({ open, onOpenChange, employees, lockedEmployeeId, projects, 
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button disabled={!employeeId} onClick={() => onSave(entries.map((entry) => ({
-            employee_id: employeeId,
+          <Button disabled={!canSave} onClick={() => onSave(entries.flatMap((entry) => entry.employeeIds.map((empId) => ({
+            employee_id: empId,
             work_date: date,
             project_id: entry.projectId === "none" ? null : entry.projectId,
             task_id: entry.taskId === "none" ? null : entry.taskId,
@@ -449,7 +502,7 @@ function DTRDialog({ open, onOpenChange, employees, lockedEmployeeId, projects, 
             time_out: toIso(entry.tOut),
             overtime_hours: parseFloat(entry.ot) || 0,
             notes: entry.notes.trim() || null,
-          })))}>Save {entries.length > 1 ? `(${entries.length})` : ""}</Button>
+          }))))}>Save{totalRows > 1 ? ` (${totalRows})` : ""}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
