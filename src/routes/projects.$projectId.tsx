@@ -15,6 +15,8 @@ import { GanttChart } from "@/components/views/GanttChart";
 import { ChecklistPanel } from "@/components/ChecklistPanel";
 import { MaterialsPanel } from "@/components/MaterialsPanel";
 import { ManpowerPanel } from "@/components/ManpowerPanel";
+import { NotesPanel } from "@/components/NotesPanel";
+import { DiscussionPanel } from "@/components/DiscussionPanel";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import type { Tables, Enums } from "@/integrations/supabase/types";
@@ -380,6 +382,8 @@ function ProjectDetail() {
             <TabsTrigger value="checklist">Checklists</TabsTrigger>
             <TabsTrigger value="materials">Materials</TabsTrigger>
             <TabsTrigger value="manpower">Manpower</TabsTrigger>
+            <TabsTrigger value="notes">Notes</TabsTrigger>
+            <TabsTrigger value="discussion">Discussion</TabsTrigger>
           </TabsList>
           <TabsContent value="checklist" className="pt-3">
             <ChecklistPanel scope="project" scopeId={projectId} profiles={profiles} />
@@ -389,6 +393,12 @@ function ProjectDetail() {
           </TabsContent>
           <TabsContent value="manpower" className="pt-3">
             <ManpowerPanel projectId={projectId} canManage={user?.id === project.created_by} tasks={tasks} />
+          </TabsContent>
+          <TabsContent value="notes" className="pt-3">
+            <NotesPanel projectId={projectId} profiles={profiles} />
+          </TabsContent>
+          <TabsContent value="discussion" className="pt-3">
+            <DiscussionPanel projectId={projectId} projectName={project.name} profiles={profiles} />
           </TabsContent>
         </Tabs>
       </div>
