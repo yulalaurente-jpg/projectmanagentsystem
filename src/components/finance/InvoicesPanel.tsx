@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { Card } from "@/components/ui/card";
@@ -86,8 +86,8 @@ export function InvoicesPanel({ projectId }: { projectId: string }) {
               const isExp = expanded.has(i.id);
               const itemPays = payments.filter((x) => x.invoice_id === i.id);
               return (
-                <>
-                  <TableRow key={i.id}>
+                <Fragment key={i.id}>
+                  <TableRow>
                     <TableCell>
                       <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => {
                         const s = new Set(expanded); s.has(i.id) ? s.delete(i.id) : s.add(i.id); setExpanded(s);
@@ -112,7 +112,7 @@ export function InvoicesPanel({ projectId }: { projectId: string }) {
                     </TableCell>
                   </TableRow>
                   {isExp && (
-                    <TableRow key={i.id + "-exp"}>
+                    <TableRow>
                       <TableCell colSpan={10} className="bg-muted/30">
                         <div className="text-xs font-semibold mb-2">Payments</div>
                         {itemPays.length === 0 ? <div className="text-xs text-muted-foreground">No payments recorded</div> : (
@@ -136,7 +136,7 @@ export function InvoicesPanel({ projectId }: { projectId: string }) {
                       </TableCell>
                     </TableRow>
                   )}
-                </>
+                </Fragment>
               );
             })}
           </TableBody>
