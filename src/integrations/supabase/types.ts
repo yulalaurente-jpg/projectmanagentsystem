@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      budget_categories: {
+        Row: {
+          allocated_amount: number
+          category_type: Database["public"]["Enums"]["budget_category_type"]
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+          notes: string | null
+          project_id: string
+          updated_at: string
+        }
+        Insert: {
+          allocated_amount?: number
+          category_type?: Database["public"]["Enums"]["budget_category_type"]
+          created_at?: string
+          created_by: string
+          id?: string
+          name: string
+          notes?: string | null
+          project_id: string
+          updated_at?: string
+        }
+        Update: {
+          allocated_amount?: number
+          category_type?: Database["public"]["Enums"]["budget_category_type"]
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          project_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chat_channel_members: {
         Row: {
           channel_id: string
@@ -326,6 +362,48 @@ export type Database = {
           },
         ]
       }
+      cost_entries: {
+        Row: {
+          amount: number
+          category_id: string | null
+          cost_date: string
+          created_at: string
+          created_by: string
+          description: string
+          entry_type: Database["public"]["Enums"]["cost_entry_type"]
+          id: string
+          notes: string | null
+          project_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          category_id?: string | null
+          cost_date?: string
+          created_at?: string
+          created_by: string
+          description: string
+          entry_type?: Database["public"]["Enums"]["cost_entry_type"]
+          id?: string
+          notes?: string | null
+          project_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category_id?: string | null
+          cost_date?: string
+          created_at?: string
+          created_by?: string
+          description?: string
+          entry_type?: Database["public"]["Enums"]["cost_entry_type"]
+          id?: string
+          notes?: string | null
+          project_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       daily_time_records: {
         Row: {
           approved_at: string | null
@@ -453,6 +531,141 @@ export type Database = {
           position?: string | null
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      funding_sources: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+          notes: string | null
+          project_id: string
+          received_amount: number
+          received_date: string | null
+          source_type: Database["public"]["Enums"]["funding_source_type"]
+          status: Database["public"]["Enums"]["funding_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          created_by: string
+          id?: string
+          name: string
+          notes?: string | null
+          project_id: string
+          received_amount?: number
+          received_date?: string | null
+          source_type?: Database["public"]["Enums"]["funding_source_type"]
+          status?: Database["public"]["Enums"]["funding_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          project_id?: string
+          received_amount?: number
+          received_date?: string | null
+          source_type?: Database["public"]["Enums"]["funding_source_type"]
+          status?: Database["public"]["Enums"]["funding_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      invoice_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string
+          id: string
+          invoice_id: string
+          notes: string | null
+          payment_date: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          reference: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          created_by: string
+          id?: string
+          invoice_id: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          reference?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string
+          id?: string
+          invoice_id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          reference?: string | null
+        }
+        Relationships: []
+      }
+      invoices: {
+        Row: {
+          created_at: string
+          created_by: string
+          direction: Database["public"]["Enums"]["invoice_direction"]
+          due_date: string | null
+          id: string
+          invoice_number: string
+          issue_date: string
+          notes: string | null
+          party_name: string
+          project_id: string
+          status: Database["public"]["Enums"]["invoice_status"]
+          subtotal: number
+          tax: number
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          direction: Database["public"]["Enums"]["invoice_direction"]
+          due_date?: string | null
+          id?: string
+          invoice_number: string
+          issue_date?: string
+          notes?: string | null
+          party_name: string
+          project_id: string
+          status?: Database["public"]["Enums"]["invoice_status"]
+          subtotal?: number
+          tax?: number
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          direction?: Database["public"]["Enums"]["invoice_direction"]
+          due_date?: string | null
+          id?: string
+          invoice_number?: string
+          issue_date?: string
+          notes?: string | null
+          party_name?: string
+          project_id?: string
+          status?: Database["public"]["Enums"]["invoice_status"]
+          subtotal?: number
+          tax?: number
+          total?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -591,6 +804,45 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id?: string
+        }
+        Relationships: []
+      }
+      project_budgets: {
+        Row: {
+          created_at: string
+          created_by: string
+          currency: string
+          end_date: string | null
+          id: string
+          notes: string | null
+          project_id: string
+          start_date: string | null
+          total_budget: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          currency?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          project_id: string
+          start_date?: string | null
+          total_budget?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          currency?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          project_id?: string
+          start_date?: string | null
+          total_budget?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1080,15 +1332,40 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user" | "viewer"
+      budget_category_type:
+        | "labor"
+        | "materials"
+        | "equipment"
+        | "subcontractor"
+        | "overhead"
+        | "other"
       chat_channel_type: "project" | "direct"
       comment_target_type: "folder" | "file"
+      cost_entry_type: "manual" | "adjustment"
       dtr_status: "pending" | "approved" | "rejected"
+      funding_source_type:
+        | "client_payment"
+        | "loan"
+        | "grant"
+        | "internal"
+        | "investor"
+        | "other"
+      funding_status: "pledged" | "partial" | "received"
+      invoice_direction: "outgoing" | "incoming"
+      invoice_status:
+        | "draft"
+        | "sent"
+        | "paid"
+        | "partial"
+        | "overdue"
+        | "cancelled"
       material_request_status:
         | "requested"
         | "approved"
         | "arrived"
         | "received"
         | "declined"
+      payment_method: "cash" | "bank_transfer" | "check" | "card" | "other"
       task_priority: "low" | "medium" | "high" | "urgent"
       task_status:
         | "todo"
@@ -1225,9 +1502,36 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user", "viewer"],
+      budget_category_type: [
+        "labor",
+        "materials",
+        "equipment",
+        "subcontractor",
+        "overhead",
+        "other",
+      ],
       chat_channel_type: ["project", "direct"],
       comment_target_type: ["folder", "file"],
+      cost_entry_type: ["manual", "adjustment"],
       dtr_status: ["pending", "approved", "rejected"],
+      funding_source_type: [
+        "client_payment",
+        "loan",
+        "grant",
+        "internal",
+        "investor",
+        "other",
+      ],
+      funding_status: ["pledged", "partial", "received"],
+      invoice_direction: ["outgoing", "incoming"],
+      invoice_status: [
+        "draft",
+        "sent",
+        "paid",
+        "partial",
+        "overdue",
+        "cancelled",
+      ],
       material_request_status: [
         "requested",
         "approved",
@@ -1235,6 +1539,7 @@ export const Constants = {
         "received",
         "declined",
       ],
+      payment_method: ["cash", "bank_transfer", "check", "card", "other"],
       task_priority: ["low", "medium", "high", "urgent"],
       task_status: [
         "todo",

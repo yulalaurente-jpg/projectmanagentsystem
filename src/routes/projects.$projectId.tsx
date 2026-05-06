@@ -17,6 +17,12 @@ import { MaterialsPanel } from "@/components/MaterialsPanel";
 import { ManpowerPanel } from "@/components/ManpowerPanel";
 import { NotesPanel } from "@/components/NotesPanel";
 import { DiscussionPanel } from "@/components/DiscussionPanel";
+import { BudgetPanel } from "@/components/finance/BudgetPanel";
+import { CostsPanel } from "@/components/finance/CostsPanel";
+import { FundingPanel } from "@/components/finance/FundingPanel";
+import { ForecastPanel } from "@/components/finance/ForecastPanel";
+import { InvoicesPanel } from "@/components/finance/InvoicesPanel";
+import { KPIPanel } from "@/components/finance/KPIPanel";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import type { Tables, Enums } from "@/integrations/supabase/types";
@@ -384,6 +390,12 @@ function ProjectDetail() {
             <TabsTrigger value="manpower">Manpower</TabsTrigger>
             <TabsTrigger value="notes">Notes</TabsTrigger>
             <TabsTrigger value="discussion">Discussion</TabsTrigger>
+            <TabsTrigger value="kpis">KPIs</TabsTrigger>
+            <TabsTrigger value="budget">Budget</TabsTrigger>
+            <TabsTrigger value="costs">Costs</TabsTrigger>
+            <TabsTrigger value="funding">Funding</TabsTrigger>
+            <TabsTrigger value="forecast">Forecast</TabsTrigger>
+            <TabsTrigger value="invoices">Invoices</TabsTrigger>
           </TabsList>
           <TabsContent value="checklist" className="pt-3">
             <ChecklistPanel scope="project" scopeId={projectId} profiles={profiles} />
@@ -400,6 +412,12 @@ function ProjectDetail() {
           <TabsContent value="discussion" className="pt-3">
             <DiscussionPanel projectId={projectId} projectName={project.name} profiles={profiles} />
           </TabsContent>
+          <TabsContent value="kpis" className="pt-3"><KPIPanel projectId={projectId} /></TabsContent>
+          <TabsContent value="budget" className="pt-3"><BudgetPanel projectId={projectId} /></TabsContent>
+          <TabsContent value="costs" className="pt-3"><CostsPanel projectId={projectId} /></TabsContent>
+          <TabsContent value="funding" className="pt-3"><FundingPanel projectId={projectId} /></TabsContent>
+          <TabsContent value="forecast" className="pt-3"><ForecastPanel projectId={projectId} /></TabsContent>
+          <TabsContent value="invoices" className="pt-3"><InvoicesPanel projectId={projectId} /></TabsContent>
         </Tabs>
       </div>
 
