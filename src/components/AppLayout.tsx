@@ -1,6 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/context/AuthContext";
-import { KanbanSquare, FolderKanban, Shield, LogOut, User as UserIcon, BarChart3, FileText, ListChecks, Package, MessageSquare, Users, ClipboardList, LayoutDashboard } from "lucide-react";
+import { KanbanSquare, FolderKanban, Shield, LogOut, User as UserIcon, BarChart3, FileText, ListChecks, Package, MessageSquare, Users, ClipboardList, LayoutDashboard, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { type ReactNode } from "react";
@@ -26,6 +26,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     { to: "/reports" as const, label: "Reports", icon: FileText },
     { to: "/templates" as const, label: "Checklists", icon: ListChecks },
     { to: "/analytics" as const, label: "Analytics", icon: BarChart3 },
+    { to: "/finance" as const, label: "Finance", icon: DollarSign },
     ...(isAdmin ? [{ to: "/admin" as const, label: "Admin", icon: Shield }] : []),
   ];
 
