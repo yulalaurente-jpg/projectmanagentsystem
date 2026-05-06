@@ -89,7 +89,7 @@ export function ForecastPanel({ projectId }: { projectId: string }) {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="date" />
               <YAxis />
-              <Tooltip formatter={(v: number) => fmtMoney(v, fin.currency)} />
+              <Tooltip formatter={(v) => fmtMoney(Number(v), fin.currency)} />
               <Legend />
               <Line type="monotone" dataKey="actual" stroke="#3b82f6" name="Actual" />
               <Line type="monotone" dataKey="budget" stroke="#10b981" name="Planned" strokeDasharray="5 5" />
