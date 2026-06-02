@@ -73,6 +73,8 @@ function ProjectDetail() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterPriority, setFilterPriority] = useState<string>("all");
   const [filterAssignee, setFilterAssignee] = useState<string>("all");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkStatus, setBulkStatus] = useState<string>("");
 
   const load = async () => {
     setLoading(true);
@@ -155,6 +157,39 @@ function ProjectDetail() {
       return;
     }
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+  };
+
+  const toggleSelect = (id: string) =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  const toggleSelectAllVisible = () => {
+    const visibleIds = new Set<string>();
+    const collect = (t: Task) => {
+      visibleIds.add(t.id);
+      subtasksOf(t.id).forEach(collect);
+    };
+    parentTasks.forEach(collect);
+    const allSelected = [...visibleIds].every((id) => selectedIds.has(id));
+    setSelectedIds(allSelected ? new Set() : visibleIds);
+  };
+
+  const applyBulkStatus = async (status: Enums<"task_status">) => {
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
+    const { error } = await supabase.from("tasks").update({ status }).in("id", ids);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setTasks((prev) => prev.map((t) => (selectedIds.has(t.id) ? { ...t, status } : t)));
+    toast.success(`Updated ${ids.length} task${ids.length === 1 ? "" : "s"}`);
+    setSelectedIds(new Set());
+    setBulkStatus("");
   };
 
   const deleteTask = async (id: string) => {
@@ -329,7 +364,35 @@ function ProjectDetail() {
       <div className="flex-1 overflow-auto">
         {view === "list" && (
           <>
-            <div className="border-b border-border bg-muted/30 px-4 py-1.5 grid grid-cols-[8px_18px_18px_56px_1fr_110px_92px_140px_100px_44px] gap-2 text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+            {selectedIds.size > 0 && (
+              <div className="sticky top-0 z-10 border-b border-border bg-primary/10 px-4 py-2 flex items-center gap-3 text-xs">
+                <span className="font-medium">{selectedIds.size} selected</span>
+                <Select value={bulkStatus} onValueChange={(v) => applyBulkStatus(v as Enums<"task_status">)}>
+                  <SelectTrigger className="h-7 w-[160px] text-xs"><SelectValue placeholder="Set status…" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todo">To Do</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="in_review">In Review</SelectItem>
+                    <SelectItem value="on_hold">On Hold</SelectItem>
+                    <SelectItem value="done">Done</SelectItem>
+                    <SelectItem value="provision">Provision</SelectItem>
+                    <SelectItem value="removed">Removed</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button size="sm" variant="ghost" className="h-7" onClick={() => setSelectedIds(new Set())}>
+                  Clear
+                </Button>
+              </div>
+            )}
+            <div className="border-b border-border bg-muted/30 px-4 py-1.5 grid grid-cols-[18px_8px_18px_18px_56px_1fr_110px_92px_140px_100px_44px] gap-2 text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+              <div>
+                <input
+                  type="checkbox"
+                  className="w-3.5 h-3.5 cursor-pointer accent-primary"
+                  checked={parentTasks.length > 0 && parentTasks.every((t) => selectedIds.has(t.id))}
+                  onChange={toggleSelectAllVisible}
+                />
+              </div>
               <div></div>
               <div></div>
               <div></div>
@@ -362,6 +425,8 @@ function ProjectDetail() {
                     onReorder={reorder}
                     canEditTask={canEditTask}
                     expandSignal={taskExpandSignal}
+                    selectedIds={selectedIds}
+                    onToggleSelect={toggleSelect}
                   />
                 ))}
               </div>

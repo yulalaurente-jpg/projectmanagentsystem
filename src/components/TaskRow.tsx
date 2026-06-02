@@ -40,6 +40,8 @@ export function TaskRow({
   depth = 0,
   canEditTask,
   expandSignal,
+  selectedIds,
+  onToggleSelect,
 }: {
   task: Task;
   projectKey: string;
@@ -58,6 +60,8 @@ export function TaskRow({
   canEditTask?: (task: Task) => boolean;
   /** When changed, forces all rows to expand or collapse. */
   expandSignal?: { action: "expand" | "collapse"; nonce: number } | null;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   useEffect(() => {
@@ -94,10 +98,20 @@ export function TaskRow({
           const sid = e.dataTransfer.getData("text/task-id");
           if (sid && sid !== task.id) onReorder(sid, task.id);
         }}
-        className="grid grid-cols-[8px_18px_18px_56px_1fr_110px_92px_140px_100px_44px] gap-2 items-center px-4 py-1 border-b border-border text-[13px] hover:bg-accent/40 cursor-pointer transition-colors leading-tight"
+        className={`grid grid-cols-[18px_8px_18px_18px_56px_1fr_110px_92px_140px_100px_44px] gap-2 items-center px-4 py-1 border-b border-border text-[13px] hover:bg-accent/40 cursor-pointer transition-colors leading-tight ${selectedIds?.has(task.id) ? "bg-accent/30" : ""}`}
         style={{ paddingLeft: 16 + indent }}
         onClick={() => onOpen(task.id)}
       >
+        <div onClick={(e) => e.stopPropagation()}>
+          {onToggleSelect && (
+            <input
+              type="checkbox"
+              checked={selectedIds?.has(task.id) ?? false}
+              onChange={() => onToggleSelect(task.id)}
+              className="w-3.5 h-3.5 cursor-pointer accent-primary"
+            />
+          )}
+        </div>
         <div className="h-5 w-1 rounded-sm" style={{ backgroundColor: colorBar ?? "transparent" }} />
         <div onClick={(e) => e.stopPropagation()} className="text-muted-foreground/60">
           {editable && <GripVertical className="w-3.5 h-3.5" />}
@@ -210,6 +224,8 @@ export function TaskRow({
               depth={depth + 1}
               canEditTask={canEditTask}
               expandSignal={expandSignal}
+              selectedIds={selectedIds}
+              onToggleSelect={onToggleSelect}
             />
           ))}
         </>
