@@ -1218,6 +1218,7 @@ export type Database = {
           description: string | null
           due_date: string | null
           employee_id: string | null
+          hold_started_at: string | null
           id: string
           labels: string[] | null
           parent_task_id: string | null
@@ -1237,6 +1238,7 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           employee_id?: string | null
+          hold_started_at?: string | null
           id?: string
           labels?: string[] | null
           parent_task_id?: string | null
@@ -1256,6 +1258,7 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           employee_id?: string | null
+          hold_started_at?: string | null
           id?: string
           labels?: string[] | null
           parent_task_id?: string | null
@@ -1374,6 +1377,7 @@ export type Database = {
         | "done"
         | "provision"
         | "removed"
+        | "on_hold"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1548,6 +1552,7 @@ export const Constants = {
         "done",
         "provision",
         "removed",
+        "on_hold",
       ],
     },
   },
