@@ -96,6 +96,7 @@ export function CreateTaskDialog({
                   <SelectItem value="todo">To Do</SelectItem>
                   <SelectItem value="in_progress">In Progress</SelectItem>
                   <SelectItem value="in_review">In Review</SelectItem>
+                  <SelectItem value="on_hold">On Hold</SelectItem>
                   <SelectItem value="done">Done</SelectItem>
                 </SelectContent>
               </Select>

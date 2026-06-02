@@ -219,7 +219,7 @@ export function TaskRow({
 }
 
 function StatusSelect({ value, onChange }: { value: Enums<"task_status">; onChange: (v: Enums<"task_status">) => void }) {
-  const opts: Enums<"task_status">[] = ["todo", "in_progress", "in_review", "done", "provision", "removed"];
+  const opts: Enums<"task_status">[] = ["todo", "in_progress", "in_review", "on_hold", "done", "provision", "removed"];
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
