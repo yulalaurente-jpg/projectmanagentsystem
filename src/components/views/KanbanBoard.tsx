@@ -10,6 +10,7 @@ const COLUMNS: { id: Enums<"task_status">; label: string; color: string }[] = [
   { id: "todo", label: "To Do", color: "var(--status-todo)" },
   { id: "in_progress", label: "In Progress", color: "var(--status-progress)" },
   { id: "in_review", label: "In Review", color: "var(--status-review)" },
+  { id: "on_hold", label: "On Hold", color: "var(--status-on-hold, #f59e0b)" },
   { id: "done", label: "Done", color: "var(--status-done)" },
 ];
 
