@@ -75,6 +75,7 @@ function ProjectDetail() {
   const [filterAssignee, setFilterAssignee] = useState<string>("all");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkStatus, setBulkStatus] = useState<string>("");
+  const [selectionEnabled, setSelectionEnabled] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -355,6 +356,20 @@ function ProjectDetail() {
                 >
                   <ChevronsDownUp className="w-4 h-4" />
                 </Button>
+                <Button
+                  size="sm"
+                  variant={selectionEnabled ? "default" : "outline"}
+                  className="h-8 text-xs"
+                  title="Toggle selection checkboxes"
+                  onClick={() => {
+                    setSelectionEnabled((v) => {
+                      if (v) setSelectedIds(new Set());
+                      return !v;
+                    });
+                  }}
+                >
+                  {selectionEnabled ? "Select: On" : "Select: Off"}
+                </Button>
               </>
             )}
           </div>
@@ -386,12 +401,14 @@ function ProjectDetail() {
             )}
             <div className="border-b border-border bg-muted/30 px-4 py-1.5 grid grid-cols-[18px_8px_18px_18px_56px_1fr_110px_92px_140px_100px_44px] gap-2 text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
               <div>
-                <input
-                  type="checkbox"
-                  className="w-3.5 h-3.5 cursor-pointer accent-primary"
-                  checked={parentTasks.length > 0 && parentTasks.every((t) => selectedIds.has(t.id))}
-                  onChange={toggleSelectAllVisible}
-                />
+                {selectionEnabled && (
+                  <input
+                    type="checkbox"
+                    className="w-3.5 h-3.5 cursor-pointer accent-primary"
+                    checked={parentTasks.length > 0 && parentTasks.every((t) => selectedIds.has(t.id))}
+                    onChange={toggleSelectAllVisible}
+                  />
+                )}
               </div>
               <div></div>
               <div></div>
@@ -425,8 +442,8 @@ function ProjectDetail() {
                     onReorder={reorder}
                     canEditTask={canEditTask}
                     expandSignal={taskExpandSignal}
-                    selectedIds={selectedIds}
-                    onToggleSelect={toggleSelect}
+                    selectedIds={selectionEnabled ? selectedIds : undefined}
+                    onToggleSelect={selectionEnabled ? toggleSelect : undefined}
                   />
                 ))}
               </div>
