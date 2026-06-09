@@ -247,6 +247,41 @@ function ProjectDetail() {
     toast.success("Task created");
   };
 
+  const createTasksBatch = async (nodes: BatchNode[], parentTaskId: string | null) => {
+    if (!user) return;
+    let createdCount = 0;
+    const inserted: Task[] = [];
+    const insertTree = async (list: BatchNode[], parent: string | null) => {
+      for (const n of list) {
+        const { data, error } = await supabase
+          .from("tasks")
+          .insert({
+            title: n.title,
+            description: "",
+            status: "todo" as Enums<"task_status">,
+            priority: "medium" as Enums<"task_priority">,
+            project_id: projectId,
+            reporter_id: user.id,
+            parent_task_id: parent,
+          })
+          .select()
+          .single();
+        if (error) {
+          toast.error(error.message);
+          continue;
+        }
+        if (data) {
+          inserted.push(data);
+          createdCount++;
+          if (n.children.length) await insertTree(n.children, data.id);
+        }
+      }
+    };
+    await insertTree(nodes, parentTaskId);
+    if (inserted.length) setTasks((prev) => [...prev, ...inserted]);
+    if (createdCount) toast.success(`${createdCount} task${createdCount === 1 ? "" : "s"} created`);
+  };
+
   const openTask = tasks.find((t) => t.id === openTaskId) ?? null;
 
   if (loading) return <div className="p-6 text-muted-foreground">Loading…</div>;
