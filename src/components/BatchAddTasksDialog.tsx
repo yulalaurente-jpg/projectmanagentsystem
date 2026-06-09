@@ -84,7 +84,7 @@ export function BatchAddTasksDialog({
     }
   };
 
-  const renderPreview = (nodes: BatchNode[], depth = 0): JSX.Element[] =>
+  const renderPreview = (nodes: BatchNode[], depth = 0): React.ReactNode[] =>
     nodes.flatMap((n, idx) => [
       <div
         key={`${depth}-${idx}-${n.title}`}
