@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { TaskRow } from "@/components/TaskRow";
 import { TaskDialog } from "@/components/TaskDialog";
 import { CreateTaskDialog } from "@/components/CreateTaskDialog";
+import { BatchAddTasksDialog, type BatchNode } from "@/components/BatchAddTasksDialog";
 import { KanbanBoard } from "@/components/views/KanbanBoard";
 import { GanttChart } from "@/components/views/GanttChart";
 import { ChecklistPanel } from "@/components/ChecklistPanel";
@@ -66,6 +67,8 @@ function ProjectDetail() {
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [createParent, setCreateParent] = useState<string | null>(null);
+  const [batchOpen, setBatchOpen] = useState(false);
+  const [batchParent, setBatchParent] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"list" | "kanban" | "gantt">("list");
   const [sortBy, setSortBy] = useState<"position" | "title" | "status" | "priority" | "due_date" | "created_at">("position");
@@ -244,6 +247,41 @@ function ProjectDetail() {
     toast.success("Task created");
   };
 
+  const createTasksBatch = async (nodes: BatchNode[], parentTaskId: string | null) => {
+    if (!user) return;
+    let createdCount = 0;
+    const inserted: Task[] = [];
+    const insertTree = async (list: BatchNode[], parent: string | null) => {
+      for (const n of list) {
+        const { data, error } = await supabase
+          .from("tasks")
+          .insert({
+            title: n.title,
+            description: "",
+            status: "todo" as Enums<"task_status">,
+            priority: "medium" as Enums<"task_priority">,
+            project_id: projectId,
+            reporter_id: user.id,
+            parent_task_id: parent,
+          })
+          .select()
+          .single();
+        if (error) {
+          toast.error(error.message);
+          continue;
+        }
+        if (data) {
+          inserted.push(data);
+          createdCount++;
+          if (n.children.length) await insertTree(n.children, data.id);
+        }
+      }
+    };
+    await insertTree(nodes, parentTaskId);
+    if (inserted.length) setTasks((prev) => [...prev, ...inserted]);
+    if (createdCount) toast.success(`${createdCount} task${createdCount === 1 ? "" : "s"} created`);
+  };
+
   const openTask = tasks.find((t) => t.id === openTaskId) ?? null;
 
   if (loading) return <div className="p-6 text-muted-foreground">Loading…</div>;
@@ -335,6 +373,9 @@ function ProjectDetail() {
             </div>
             <Button size="sm" onClick={() => { setCreateParent(null); setCreateOpen(true); }}>
               <Plus className="w-4 h-4 mr-1.5" /> New task
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => { setBatchParent(null); setBatchOpen(true); }}>
+              <Plus className="w-4 h-4 mr-1.5" /> Batch add
             </Button>
             {view === "list" && (
               <>
@@ -510,6 +551,12 @@ function ProjectDetail() {
         employees={projectEmployees}
         parentTaskId={createParent}
         onCreate={createTask}
+      />
+      <BatchAddTasksDialog
+        open={batchOpen}
+        onOpenChange={setBatchOpen}
+        parentTaskId={batchParent}
+        onSubmit={createTasksBatch}
       />
       <TaskDialog
         task={openTask}
