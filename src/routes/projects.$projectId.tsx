@@ -374,6 +374,9 @@ function ProjectDetail() {
             <Button size="sm" onClick={() => { setCreateParent(null); setCreateOpen(true); }}>
               <Plus className="w-4 h-4 mr-1.5" /> New task
             </Button>
+            <Button size="sm" variant="outline" onClick={() => { setBatchParent(null); setBatchOpen(true); }}>
+              <Plus className="w-4 h-4 mr-1.5" /> Batch add
+            </Button>
             {view === "list" && (
               <>
                 <Button
@@ -548,6 +551,12 @@ function ProjectDetail() {
         employees={projectEmployees}
         parentTaskId={createParent}
         onCreate={createTask}
+      />
+      <BatchAddTasksDialog
+        open={batchOpen}
+        onOpenChange={setBatchOpen}
+        parentTaskId={batchParent}
+        onSubmit={createTasksBatch}
       />
       <TaskDialog
         task={openTask}
