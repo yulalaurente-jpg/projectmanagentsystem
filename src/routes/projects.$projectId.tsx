@@ -303,7 +303,7 @@ function ProjectDetail() {
               <div className="text-[11px] uppercase tracking-wider text-muted-foreground font-mono">{project.key}</div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap justify-end">
             <div className="flex items-center bg-muted/60 rounded-md p-0.5">
               {([
                 { v: "list", label: "List", Icon: List },
