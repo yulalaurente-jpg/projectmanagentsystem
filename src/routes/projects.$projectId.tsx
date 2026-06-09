@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { TaskRow } from "@/components/TaskRow";
 import { TaskDialog } from "@/components/TaskDialog";
 import { CreateTaskDialog } from "@/components/CreateTaskDialog";
+import { BatchAddTasksDialog, type BatchNode } from "@/components/BatchAddTasksDialog";
 import { KanbanBoard } from "@/components/views/KanbanBoard";
 import { GanttChart } from "@/components/views/GanttChart";
 import { ChecklistPanel } from "@/components/ChecklistPanel";
@@ -66,6 +67,8 @@ function ProjectDetail() {
   const [openTaskId, setOpenTaskId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [createParent, setCreateParent] = useState<string | null>(null);
+  const [batchOpen, setBatchOpen] = useState(false);
+  const [batchParent, setBatchParent] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"list" | "kanban" | "gantt">("list");
   const [sortBy, setSortBy] = useState<"position" | "title" | "status" | "priority" | "due_date" | "created_at">("position");
