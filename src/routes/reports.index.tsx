@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChevronLeft, Upload, Download, Folder, FileText, ExternalLink, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { listDrive, getDriveDownloadUrl, uploadToDrive, type DriveFile } from "@/server/drive.functions";
+import { listDrive, getDriveDownloadUrl, uploadToDrive, type DriveFile } from "@/lib/drive.functions";
 
 export const Route = createFileRoute("/reports/")({
   head: () => ({

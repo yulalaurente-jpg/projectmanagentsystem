@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Shield, ShieldOff, Trash2, Search, CheckCircle2, XCircle, Mail, Eye } from "lucide-react";
 import { toast } from "sonner";
-import { deleteUser, listUsers } from "@/server/admin-actions";
+import { deleteUser, listUsers } from "@/lib/admin-actions.functions";
 import {
   AlertDialog,
   AlertDialogAction,
