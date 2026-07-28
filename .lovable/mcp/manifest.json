@@ -1,0 +1,160 @@
+{
+  "version": 1,
+  "sdk_version": "0.24.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://dbiyszbomvblwyieyinf.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "trackr-mcp",
+      "version": "0.1.0",
+      "title": "Trackr MCP"
+    },
+    "tools": [
+      {
+        "name": "whoami",
+        "title": "Who am I",
+        "description": "Return the signed-in user's id and email as seen by this MCP server.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_projects",
+        "title": "List projects",
+        "description": "List projects the signed-in user can see.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "limit": {
+              "description": "Max rows to return (default 25).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_tasks",
+        "title": "List tasks",
+        "description": "List tasks the signed-in user can see, optionally filtered by project or status.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "projectId": {
+              "description": "Filter to a project by id.",
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "todo",
+                "in_progress",
+                "in_review",
+                "done",
+                "on_hold",
+                "provision",
+                "removed"
+              ]
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_task",
+        "title": "Create task",
+        "description": "Create a new task in a project. The signed-in user is set as the reporter.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "projectId": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "Project to add the task to."
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Task title."
+            },
+            "description": {
+              "type": "string"
+            },
+            "priority": {
+              "type": "string",
+              "enum": [
+                "low",
+                "medium",
+                "high",
+                "urgent"
+              ]
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "todo",
+                "in_progress",
+                "in_review",
+                "done",
+                "on_hold",
+                "provision",
+                "removed"
+              ]
+            },
+            "dueDate": {
+              "description": "ISO date (YYYY-MM-DD).",
+              "type": "string"
+            }
+          },
+          "required": [
+            "projectId",
+            "title"
+          ]
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
