@@ -17,7 +17,7 @@ export default defineTool({
     const supabase = supabaseForUser(ctx);
     const { data, error } = await supabase
       .from("projects")
-      .select("id,name,key,status,created_at,owner_id")
+      .select("id,name,key,description,color,created_at,created_by")
       .order("created_at", { ascending: false })
       .limit(limit ?? 25);
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
