@@ -10,6 +10,9 @@ import { toast } from "sonner";
 import { Loader2, KanbanSquare } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    next: typeof s.next === "string" ? s.next : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Sign in — Trackr" },
@@ -22,14 +25,23 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const { user, loading, signIn, signUp } = useAuth();
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
+  const safeNext =
+    next && next.startsWith("/") && !next.startsWith("//") ? next : null;
   const [submitting, setSubmitting] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
 
   useEffect(() => {
-    if (!loading && user) navigate({ to: "/projects" });
-  }, [user, loading, navigate]);
+    if (!loading && user) {
+      if (safeNext) {
+        window.location.href = safeNext;
+      } else {
+        navigate({ to: "/projects" });
+      }
+    }
+  }, [user, loading, navigate, safeNext]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
