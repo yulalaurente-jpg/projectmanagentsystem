@@ -13,7 +13,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate({ to: "/auth" });
+    navigate({ to: "/auth", search: { next: "" } });
   };
 
   const navItems = [
@@ -84,7 +84,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading…</div>;
   }
   if (!user) {
-    navigate({ to: "/auth" });
+    navigate({ to: "/auth", search: { next: "" } });
     return null;
   }
   return <>{children}</>;
