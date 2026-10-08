@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TemplatesRouteImport } from './routes/templates'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as InventoryRouteImport } from './routes/inventory'
-import { Route as FinanceRouteImport } from './routes/finance'
 import { Route as EmployeesRouteImport } from './routes/employees'
 import { Route as DtrRouteImport } from './routes/dtr'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -42,11 +41,6 @@ const McpRoute = McpRouteImport.update({
 const InventoryRoute = InventoryRouteImport.update({
   id: '/inventory',
   path: '/inventory',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FinanceRoute = FinanceRouteImport.update({
-  id: '/finance',
-  path: '/finance',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EmployeesRoute = EmployeesRouteImport.update({
@@ -137,7 +131,6 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/dtr': typeof DtrRoute
   '/employees': typeof EmployeesRoute
-  '/finance': typeof FinanceRoute
   '/inventory': typeof InventoryRoute
   '/mcp': typeof McpRoute
   '/templates': typeof TemplatesRoute
@@ -158,7 +151,6 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/dtr': typeof DtrRoute
   '/employees': typeof EmployeesRoute
-  '/finance': typeof FinanceRoute
   '/inventory': typeof InventoryRoute
   '/mcp': typeof McpRoute
   '/templates': typeof TemplatesRoute
@@ -180,7 +172,6 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/dtr': typeof DtrRoute
   '/employees': typeof EmployeesRoute
-  '/finance': typeof FinanceRoute
   '/inventory': typeof InventoryRoute
   '/mcp': typeof McpRoute
   '/templates': typeof TemplatesRoute
@@ -203,7 +194,6 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/dtr'
     | '/employees'
-    | '/finance'
     | '/inventory'
     | '/mcp'
     | '/templates'
@@ -224,7 +214,6 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/dtr'
     | '/employees'
-    | '/finance'
     | '/inventory'
     | '/mcp'
     | '/templates'
@@ -245,7 +234,6 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/dtr'
     | '/employees'
-    | '/finance'
     | '/inventory'
     | '/mcp'
     | '/templates'
@@ -267,7 +255,6 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   DtrRoute: typeof DtrRoute
   EmployeesRoute: typeof EmployeesRoute
-  FinanceRoute: typeof FinanceRoute
   InventoryRoute: typeof InventoryRoute
   McpRoute: typeof McpRoute
   TemplatesRoute: typeof TemplatesRoute
@@ -301,13 +288,6 @@ declare module '@tanstack/react-router' {
       path: '/inventory'
       fullPath: '/inventory'
       preLoaderRoute: typeof InventoryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/finance': {
-      id: '/finance'
-      path: '/finance'
-      fullPath: '/finance'
-      preLoaderRoute: typeof FinanceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/employees': {
@@ -427,7 +407,6 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   DtrRoute: DtrRoute,
   EmployeesRoute: EmployeesRoute,
-  FinanceRoute: FinanceRoute,
   InventoryRoute: InventoryRoute,
   McpRoute: McpRoute,
   TemplatesRoute: TemplatesRoute,
